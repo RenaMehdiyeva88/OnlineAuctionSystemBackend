@@ -1,0 +1,11 @@
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\bin\Release\net8.0\OnlineAuctionSystem.Contracts.deps.json
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\bin\Release\net8.0\OnlineAuctionSystem.Contracts.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\bin\Release\net8.0\OnlineAuctionSystem.Contracts.pdb
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\OnlineAuctionSystem.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\OnlineAuctionSystem.Contracts.AssemblyInfoInputs.cache
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\OnlineAuctionSystem.Contracts.AssemblyInfo.cs
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\OnlineAuctionSystem.Contracts.csproj.CoreCompileInputs.cache
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\OnlineAuctionSystem.Contracts.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\refint\OnlineAuctionSystem.Contracts.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\OnlineAuctionSystem.Contracts.pdb
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Contracts\obj\Release\net8.0\ref\OnlineAuctionSystem.Contracts.dll

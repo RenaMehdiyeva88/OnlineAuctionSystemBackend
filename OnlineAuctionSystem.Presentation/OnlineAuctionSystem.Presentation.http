@@ -1,0 +1,76 @@
+@OnlineAuctionSystem.Presentation_HostAddress = http://localhost:5200
+
+### Register a seller (F1)
+POST {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "seller1",
+  "email": "seller1@example.com",
+  "password": "Password123!",
+  "role": "Seller"
+}
+
+### Register a buyer (F1)
+POST {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "buyer1",
+  "email": "buyer1@example.com",
+  "password": "Password123!",
+  "role": "Buyer"
+}
+
+### Login
+POST {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seller1@example.com",
+  "password": "Password123!"
+}
+
+### Get categories (F8)
+GET {{OnlineAuctionSystem.Presentation_HostAddress}}/api/categories
+
+### Search / browse auctions (F8)
+GET {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auctions?keyword=phone&page=1&pageSize=20
+
+### Create an auction (F2) — requires Seller Bearer token
+POST {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auctions
+Content-Type: application/json
+Authorization: Bearer {{sellerAccessToken}}
+
+{
+  "title": "Vintage Camera",
+  "description": "A well-kept vintage film camera.",
+  "imageUrl": null,
+  "startingPrice": 50.00,
+  "endTime": "2026-08-20T18:00:00Z",
+  "categoryId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Get auction by id
+GET {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auctions/00000000-0000-0000-0000-000000000000
+
+### Place a bid (F3) — requires Buyer Bearer token
+POST {{OnlineAuctionSystem.Presentation_HostAddress}}/api/bids
+Content-Type: application/json
+Authorization: Bearer {{buyerAccessToken}}
+
+{
+  "auctionId": "00000000-0000-0000-0000-000000000000",
+  "amount": 75.00
+}
+
+### Bid history (F7)
+GET {{OnlineAuctionSystem.Presentation_HostAddress}}/api/auctions/00000000-0000-0000-0000-000000000000/bids
+
+### Seller dashboard (F6) — requires Seller Bearer token
+GET {{OnlineAuctionSystem.Presentation_HostAddress}}/api/seller/dashboard
+Authorization: Bearer {{sellerAccessToken}}
+
+### My notifications (F3/F5) — requires Bearer token
+GET {{OnlineAuctionSystem.Presentation_HostAddress}}/api/notifications
+Authorization: Bearer {{sellerAccessToken}}

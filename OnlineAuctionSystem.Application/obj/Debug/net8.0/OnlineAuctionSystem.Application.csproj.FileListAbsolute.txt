@@ -1,0 +1,15 @@
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\bin\Debug\net8.0\OnlineAuctionSystem.Application.deps.json
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\bin\Debug\net8.0\OnlineAuctionSystem.Application.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\bin\Debug\net8.0\OnlineAuctionSystem.Application.pdb
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\bin\Debug\net8.0\OnlineAuctionSystem.Domain.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\bin\Debug\net8.0\OnlineAuctionSystem.Domain.pdb
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.csproj.AssemblyReference.cache
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.AssemblyInfoInputs.cache
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.AssemblyInfo.cs
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.csproj.CoreCompileInputs.cache
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAu.3885FD95.Up2Date
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\refint\OnlineAuctionSystem.Application.dll
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\OnlineAuctionSystem.Application.pdb
+C:\Users\Emil\source\repos\OnlineAuctionSystem\OnlineAuctionSystem.Application\obj\Debug\net8.0\ref\OnlineAuctionSystem.Application.dll
