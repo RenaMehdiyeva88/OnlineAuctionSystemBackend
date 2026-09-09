@@ -61,6 +61,15 @@ namespace OnlineAuctionSystem.Presentation.Middleware
                     statusCode = HttpStatusCode.BadRequest;
                     message = exception.Message;
                     break;
+                case FluentValidation.ValidationException validationException:
+                    // Was previously falling through to the default 500 case,
+                    // hiding real field-level validation errors from the client.
+                    statusCode = HttpStatusCode.BadRequest;
+                    message = "Validation failed.";
+                    errors = validationException.Errors
+                        .GroupBy(e => e.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+                    break;
                 default:
                     statusCode = HttpStatusCode.InternalServerError;
                     message = "An unexpected error occurred.";

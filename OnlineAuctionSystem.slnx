@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="OnlineAuctionSystem.Application/OnlineAuctionSystem.Application.csproj" />
+  <Project Path="OnlineAuctionSystem.Contracts/OnlineAuctionSystem.Contracts.csproj" />
+  <Project Path="OnlineAuctionSystem.Domain/OnlineAuctionSystem.Domain.csproj" />
+  <Project Path="OnlineAuctionSystem.Infrastructure/OnlineAuctionSystem.Infrastructure.csproj" />
+  <Project Path="OnlineAuctionSystem.Persistence/OnlineAuctionSystem.Persistence.csproj" />
+  <Project Path="OnlineAuctionSystem.Presentation/OnlineAuctionSystem.Presentation.csproj" />
+</Solution>

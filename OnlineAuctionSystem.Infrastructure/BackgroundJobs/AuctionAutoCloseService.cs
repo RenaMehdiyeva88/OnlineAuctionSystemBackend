@@ -50,6 +50,12 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
 
             var expiredAuctions = await auctionRepository.GetExpiredActiveAuctionsAsync(cancellationToken);
 
+            // Collect who needs notifying as we go, but don't send anything
+            // over SignalR until after SaveChangesAsync succeeds below — same
+            // fix as CloseAuctionCommandHandler: don't tell clients "auction
+            // closed, X won" if that write could still fail and roll back.
+            var pendingNotifications = new List<(Guid UserId, Guid AuctionId, decimal? Amount, bool IsWinner)>();
+
             foreach (var auction in expiredAuctions)
             {
                 auction.Status = AuctionStatus.Closed;
@@ -66,7 +72,7 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
                         Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {winningBid.Amount:C}."
                     }, cancellationToken);
 
-                    await notificationService.NotifyAuctionWonAsync(winningBid.BidderId, auction.Id, winningBid.Amount, cancellationToken);
+                    pendingNotifications.Add((winningBid.BidderId, auction.Id, winningBid.Amount, IsWinner: true));
                 }
 
                 await notificationRepository.AddAsync(new Domain.Entities.Notification
@@ -78,7 +84,7 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
                         : $"Your auction \"{auction.Title}\" has closed with no bids."
                 }, cancellationToken);
 
-                await notificationService.NotifyAuctionClosedAsync(auction.SellerId, auction.Id, cancellationToken);
+                pendingNotifications.Add((auction.SellerId, auction.Id, null, IsWinner: false));
 
                 _logger.LogInformation("Auto-closed auction {AuctionId} ('{Title}').", auction.Id, auction.Title);
             }
@@ -86,6 +92,14 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
             if (expiredAuctions.Count > 0)
             {
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                foreach (var (userId, auctionId, amount, isWinner) in pendingNotifications)
+                {
+                    if (isWinner)
+                        await notificationService.NotifyAuctionWonAsync(userId, auctionId, amount!.Value, cancellationToken);
+                    else
+                        await notificationService.NotifyAuctionClosedAsync(userId, auctionId, cancellationToken);
+                }
             }
         }
     }

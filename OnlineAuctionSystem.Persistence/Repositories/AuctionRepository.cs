@@ -67,16 +67,6 @@ namespace OnlineAuctionSystem.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        // F8 — category-based browsing.
-        public async Task<List<Auction>> GetByCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
-            await _context.Auctions
-                .Include(a => a.Seller)
-                .Include(a => a.Category)
-                .Include(a => a.Bids)
-                .Where(a => a.CategoryId == categoryId && a.Status == AuctionStatus.Active)
-                .OrderBy(a => a.EndTime)
-                .ToListAsync(cancellationToken);
-
         // F6 — seller dashboard: active and completed auctions.
         public async Task<List<Auction>> GetBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
             await _context.Auctions
@@ -96,18 +86,6 @@ namespace OnlineAuctionSystem.Persistence.Repositories
 
         public async Task AddAsync(Auction auction, CancellationToken cancellationToken = default) =>
             await _context.Auctions.AddAsync(auction, cancellationToken);
-
-        // F8 — get all active auctions with pagination
-        public async Task<List<Auction>> GetAllActiveAsync(int page, int pageSize, CancellationToken cancellationToken = default) =>
-            await _context.Auctions
-                .Include(a => a.Seller)
-                .Include(a => a.Category)
-                .Include(a => a.Bids)
-                .Where(a => a.Status == AuctionStatus.Active)
-                .OrderBy(a => a.EndTime)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(cancellationToken);
 
         public void Update(Auction auction) => _context.Auctions.Update(auction);
     }

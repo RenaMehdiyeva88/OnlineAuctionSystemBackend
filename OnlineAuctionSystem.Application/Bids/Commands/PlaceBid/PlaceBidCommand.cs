@@ -1,5 +1,5 @@
 using MediatR;
-using OnlineAuctionSystem.Application.Bids.DTOs;
+using OnlineAuctionSystem.Contracts.Bids;
 
 namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
 {

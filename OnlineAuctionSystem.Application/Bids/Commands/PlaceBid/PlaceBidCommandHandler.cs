@@ -1,7 +1,9 @@
 using AutoMapper;
 using MediatR;
-using OnlineAuctionSystem.Application.Bids.DTOs;
+using Microsoft.EntityFrameworkCore;
+using OnlineAuctionSystem.Contracts.Bids;
 using OnlineAuctionSystem.Application.Common.Exceptions;
+using OnlineAuctionSystem.Application.Common.Interfaces;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 using OnlineAuctionSystem.Domain.Entities;
@@ -17,6 +19,7 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
         private readonly INotificationRepository _notificationRepository;
         private readonly INotificationService _notificationService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IDateTime _dateTime;
         private readonly IMapper _mapper;
 
         public PlaceBidCommandHandler(
@@ -26,6 +29,7 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
             INotificationRepository notificationRepository,
             INotificationService notificationService,
             IUnitOfWork unitOfWork,
+            IDateTime dateTime,
             IMapper mapper)
         {
             _auctionRepository = auctionRepository;
@@ -34,6 +38,7 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
             _notificationRepository = notificationRepository;
             _notificationService = notificationService;
             _unitOfWork = unitOfWork;
+            _dateTime = dateTime;
             _mapper = mapper;
         }
 
@@ -65,7 +70,16 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
             };
 
             await _bidRepository.AddAsync(bid, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Touch the auction row so EF Core includes it in the UPDATE and
+            // checks RowVersion. If another request placed a bid on this same
+            // auction between our read (GetHighestBidAsync above) and this
+            // save, the RowVersion will have changed underneath us and EF
+            // throws DbUpdateConcurrencyException below — that's exactly the
+            // race condition we're guarding against (two lower/higher bids
+            // both reading the same "current highest" and both succeeding).
+            auction.UpdatedAt = _dateTime.UtcNow;
+            _auctionRepository.Update(auction);
 
             if (previousTopBid is not null && previousTopBid.BidderId != bidder.Id)
             {
@@ -75,8 +89,23 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
                     AuctionId = auction.Id,
                     Message = $"You've been outbid on \"{auction.Title}\". New highest bid: {request.Amount}."
                 }, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
 
+            try
+            {
+                // Single SaveChangesAsync for the whole use case — the bid,
+                // the auction's concurrency-token touch, and the outbid
+                // notification all commit together in one transaction.
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new ConflictException(
+                    "Someone just placed a bid on this auction before yours went through. Please refresh and try again.");
+            }
+
+            if (previousTopBid is not null && previousTopBid.BidderId != bidder.Id)
+            {
                 await _notificationService.NotifyOutbidAsync(
                     previousTopBid.BidderId, auction.Id, request.Amount, cancellationToken);
             }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 using OnlineAuctionSystem.Domain.Entities;
 using OnlineAuctionSystem.Domain.Enums;
@@ -11,7 +12,7 @@ namespace OnlineAuctionSystem.Persistence.Seed
     // so the app is immediately usable and fully demonstrates all features after first run.
     public static class DatabaseSeeder
     {
-        public static async Task SeedAsync(AuctionDbContext context, IPasswordHasher passwordHasher)
+        public static async Task SeedAsync(AuctionDbContext context, IPasswordHasher passwordHasher, ILogger logger)
         {
             await context.Database.MigrateAsync();
 
@@ -69,16 +70,16 @@ namespace OnlineAuctionSystem.Persistence.Seed
                 // Seed Auctions (18 comprehensive demo auctions across all categories)
                 if (!await context.Auctions.AnyAsync() && seller != null && buyer != null)
                 {
-                var electronics = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Electronics");
-                var art = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Art");
-                var collectibles = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Collectibles");
-                var fashion = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Fashion");
-                var homeGarden = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Home & Garden");
-                var sports = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Sports");
+                    var electronics = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Electronics");
+                    var art = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Art");
+                    var collectibles = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Collectibles");
+                    var fashion = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Fashion");
+                    var homeGarden = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Home & Garden");
+                    var sports = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Sports");
 
-                if (electronics != null && art != null && collectibles != null && fashion != null && homeGarden != null && sports != null)
-                {
-                    var auctions = new List<Auction>
+                    if (electronics != null && art != null && collectibles != null && fashion != null && homeGarden != null && sports != null)
+                    {
+                        var auctions = new List<Auction>
                     {
                         // ELECTRONICS (4 items)
                         new Auction
@@ -293,48 +294,55 @@ namespace OnlineAuctionSystem.Persistence.Seed
                         }
                     };
 
-                    context.Auctions.AddRange(auctions);
-                    await context.SaveChangesAsync();
+                        context.Auctions.AddRange(auctions);
+                        await context.SaveChangesAsync();
 
-                    // Add some bids to closed auctions for demonstration
-                    var closedRetroConsole = await context.Auctions
-                        .FirstOrDefaultAsync(a => a.Title == "Retro Nintendo Entertainment System (NES) Console");
-                    if (closedRetroConsole != null)
-                    {
-                        context.Bids.AddRange(
-                            new Bid { Amount = 260m, AuctionId = closedRetroConsole.Id, BidderId = buyer.Id },
-                            new Bid { Amount = 280m, AuctionId = closedRetroConsole.Id, BidderId = seller.Id },
-                            new Bid { Amount = 300m, AuctionId = closedRetroConsole.Id, BidderId = buyer.Id }
-                        );
+                        // Add some bids to closed auctions for demonstration
+                        var closedRetroConsole = await context.Auctions
+                            .FirstOrDefaultAsync(a => a.Title == "Retro Nintendo Entertainment System (NES) Console");
+                        if (closedRetroConsole != null)
+                        {
+                            context.Bids.AddRange(
+                                new Bid { Amount = 260m, AuctionId = closedRetroConsole.Id, BidderId = buyer.Id },
+                                new Bid { Amount = 280m, AuctionId = closedRetroConsole.Id, BidderId = seller.Id },
+                                new Bid { Amount = 300m, AuctionId = closedRetroConsole.Id, BidderId = buyer.Id }
+                            );
+                        }
+
+                        var closedOmega = await context.Auctions
+                            .FirstOrDefaultAsync(a => a.Title == "Omega Speedmaster Professional Chronograph");
+                        if (closedOmega != null)
+                        {
+                            context.Bids.AddRange(
+                                new Bid { Amount = 3600m, AuctionId = closedOmega.Id, BidderId = buyer.Id },
+                                new Bid { Amount = 3700m, AuctionId = closedOmega.Id, BidderId = seller.Id },
+                                new Bid { Amount = 3800m, AuctionId = closedOmega.Id, BidderId = buyer.Id },
+                                new Bid { Amount = 3900m, AuctionId = closedOmega.Id, BidderId = seller.Id }
+                            );
+                        }
+
+                        await context.SaveChangesAsync();
                     }
-
-                    var closedOmega = await context.Auctions
-                        .FirstOrDefaultAsync(a => a.Title == "Omega Speedmaster Professional Chronograph");
-                    if (closedOmega != null)
-                    {
-                        context.Bids.AddRange(
-                            new Bid { Amount = 3600m, AuctionId = closedOmega.Id, BidderId = buyer.Id },
-                            new Bid { Amount = 3700m, AuctionId = closedOmega.Id, BidderId = seller.Id },
-                            new Bid { Amount = 3800m, AuctionId = closedOmega.Id, BidderId = buyer.Id },
-                            new Bid { Amount = 3900m, AuctionId = closedOmega.Id, BidderId = seller.Id }
-                        );
-                    }
-
-                    await context.SaveChangesAsync();
                 }
-            }
             }
 
             try
             {
                 await SeedCoreAsync();
             }
-            catch (InvalidCastException)
+            catch (InvalidCastException ex)
             {
-                // If seed queries fail due to incompatible existing schema, recreate DB and retry once.
-                await context.Database.EnsureDeletedAsync();
-                await context.Database.MigrateAsync();
-                await SeedCoreAsync();
+                // NEVER call EnsureDeletedAsync() here. A schema/type mismatch during
+                // seeding is a bug to fix (usually a stale migration or a manually
+                // edited DB), not a reason to silently wipe every user's data —
+                // that would destroy real production data on any transient cast
+                // error. Log it loudly and let the exception propagate so startup
+                // fails visibly instead of the app "recovering" by deleting the DB.
+                logger.LogError(ex,
+                    "Database seeding failed due to a type mismatch. This usually means the schema is out of sync " +
+                    "with a pending migration. Run 'dotnet ef database update' and investigate — the database was " +
+                    "NOT deleted.");
+                throw;
             }
         }
     }

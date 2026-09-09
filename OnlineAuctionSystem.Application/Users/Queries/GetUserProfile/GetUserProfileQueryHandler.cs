@@ -2,7 +2,7 @@ using AutoMapper;
 using MediatR;
 using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
-using OnlineAuctionSystem.Application.Users.DTOs;
+using OnlineAuctionSystem.Contracts.Users;
 using OnlineAuctionSystem.Domain.Entities;
 
 namespace OnlineAuctionSystem.Application.Users.Queries.GetUserProfile

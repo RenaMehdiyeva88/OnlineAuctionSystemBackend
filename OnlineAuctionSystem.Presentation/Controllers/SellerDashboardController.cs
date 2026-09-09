@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OnlineAuctionSystem.Application.Auctions.DTOs;
+using OnlineAuctionSystem.Contracts.Auctions;
 using OnlineAuctionSystem.Application.Users.Queries.GetSellerDashboard;
 using System.Security.Claims;
 
@@ -22,7 +22,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<SellerAuctionDto>>> GetDashboard(CancellationToken cancellationToken)
+        public async Task<ActionResult<SellerDashboardDto>> GetDashboard(CancellationToken cancellationToken)
         {
             var sellerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _mediator.Send(new GetSellerDashboardQuery(sellerId), cancellationToken);

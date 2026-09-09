@@ -1,11 +1,12 @@
 using AutoMapper;
 using MediatR;
-using OnlineAuctionSystem.Application.Bids.DTOs;
+using OnlineAuctionSystem.Contracts.Bids;
+using OnlineAuctionSystem.Contracts.Common;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 
 namespace OnlineAuctionSystem.Application.Bids.Queries.GetBidHistory
 {
-    public class GetBidHistoryQueryHandler : IRequestHandler<GetBidHistoryQuery, List<BidDto>>
+    public class GetBidHistoryQueryHandler : IRequestHandler<GetBidHistoryQuery, PagedResult<BidDto>>
     {
         private readonly IBidRepository _bidRepository;
         private readonly IMapper _mapper;
@@ -16,10 +17,13 @@ namespace OnlineAuctionSystem.Application.Bids.Queries.GetBidHistory
             _mapper = mapper;
         }
 
-        public async Task<List<BidDto>> Handle(GetBidHistoryQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<BidDto>> Handle(GetBidHistoryQuery request, CancellationToken cancellationToken)
         {
-            var bids = await _bidRepository.GetByAuctionIdAsync(request.AuctionId, cancellationToken);
-            return _mapper.Map<List<BidDto>>(bids);
+            var (bids, totalCount) = await _bidRepository.GetByAuctionIdAsync(
+                request.AuctionId, request.PageNumber, request.PageSize, cancellationToken);
+
+            return new PagedResult<BidDto>(
+                _mapper.Map<List<BidDto>>(bids), request.PageNumber, request.PageSize, totalCount);
         }
     }
 }

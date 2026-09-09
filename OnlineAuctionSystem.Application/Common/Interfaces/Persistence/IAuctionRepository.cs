@@ -6,9 +6,6 @@ namespace OnlineAuctionSystem.Application.Common.Interfaces.Persistence
     {
         Task<Auction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-        // F7 — browse all active auctions (homepage/list view) with pagination.
-        Task<List<Auction>> GetAllActiveAsync(int page, int pageSize, CancellationToken cancellationToken = default);
-
         // F8 — category-based browsing/search with keyword + price range filter.
         Task<List<Auction>> SearchAsync(
             string? keyword,
@@ -18,8 +15,6 @@ namespace OnlineAuctionSystem.Application.Common.Interfaces.Persistence
             int page,
             int pageSize,
             CancellationToken cancellationToken = default);
-
-        Task<List<Auction>> GetByCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
 
         // F6 — seller dashboard: active and completed auctions for a given seller.
         Task<List<Auction>> GetBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);

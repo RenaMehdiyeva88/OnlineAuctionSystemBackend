@@ -1,5 +1,5 @@
 using MediatR;
-using OnlineAuctionSystem.Application.Users.DTOs;
+using OnlineAuctionSystem.Contracts.Users;
 
 namespace OnlineAuctionSystem.Application.Users.Commands.RegisterUser
 {

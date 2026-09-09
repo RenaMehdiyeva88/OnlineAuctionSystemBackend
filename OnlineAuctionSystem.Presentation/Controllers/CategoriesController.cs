@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OnlineAuctionSystem.Application.Categories.DTOs;
+using OnlineAuctionSystem.Contracts.Categories;
 using OnlineAuctionSystem.Application.Categories.Queries.GetCategories;
 
 namespace OnlineAuctionSystem.Presentation.Controllers

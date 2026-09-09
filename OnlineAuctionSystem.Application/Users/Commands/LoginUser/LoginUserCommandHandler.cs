@@ -3,7 +3,7 @@ using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
-using OnlineAuctionSystem.Application.Users.DTOs;
+using OnlineAuctionSystem.Contracts.Users;
 
 namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
 {
@@ -14,6 +14,7 @@ namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IDateTime _dateTime;
 
         // Refresh tokens are kept alive for 7 days by default.
         private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(7);
@@ -22,12 +23,14 @@ namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
             IUserRepository userRepository,
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IDateTime dateTime)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
             _unitOfWork = unitOfWork;
+            _dateTime = dateTime;
         }
 
         public async Task<AuthResponse> Handle(LoginUserCommand request, CancellationToken cancellationToken)
@@ -43,7 +46,7 @@ namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
 
             // NOTE: requires User.RefreshToken / User.RefreshTokenExpiryTime on the Domain entity.
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.Add(RefreshTokenLifetime);
+            user.RefreshTokenExpiryTime = _dateTime.UtcNow.Add(RefreshTokenLifetime);
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

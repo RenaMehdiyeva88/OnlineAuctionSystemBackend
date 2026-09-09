@@ -11,6 +11,7 @@
         int TotalBids,
         DateTime EndTime,
         string Status,
+        Guid? WinnerId,
         string? WinnerName
     );
 }

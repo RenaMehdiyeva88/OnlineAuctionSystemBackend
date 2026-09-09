@@ -1,6 +1,6 @@
 using AutoMapper;
 using MediatR;
-using OnlineAuctionSystem.Application.Auctions.DTOs;
+using OnlineAuctionSystem.Contracts.Auctions;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 
 namespace OnlineAuctionSystem.Application.Auctions.Queries.GetAuctionsByCategory

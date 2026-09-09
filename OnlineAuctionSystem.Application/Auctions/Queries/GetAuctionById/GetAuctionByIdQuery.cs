@@ -1,5 +1,5 @@
 using MediatR;
-using OnlineAuctionSystem.Application.Auctions.DTOs;
+using OnlineAuctionSystem.Contracts.Auctions;
 
 namespace OnlineAuctionSystem.Application.Auctions.Queries.GetAuctionById;
 

@@ -15,13 +15,23 @@ namespace OnlineAuctionSystem.Persistence.Repositories
             _context = context;
         }
 
-        // F7 — full bid history per auction, most recent first.
-        public async Task<List<Bid>> GetByAuctionIdAsync(Guid auctionId, CancellationToken cancellationToken = default) =>
-            await _context.Bids
+        // F7 — paginated bid history per auction, most recent first.
+        public async Task<(List<Bid> Items, int TotalCount)> GetByAuctionIdAsync(
+            Guid auctionId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Bids
                 .Include(b => b.Bidder)
                 .Where(b => b.AuctionId == auctionId)
-                .OrderByDescending(b => b.CreatedAt)
+                .OrderByDescending(b => b.CreatedAt);
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync(cancellationToken);
+
+            return (items, totalCount);
+        }
 
         // F3 — used to validate that a new bid beats the current highest.
         public async Task<Bid?> GetHighestBidAsync(Guid auctionId, CancellationToken cancellationToken = default) =>

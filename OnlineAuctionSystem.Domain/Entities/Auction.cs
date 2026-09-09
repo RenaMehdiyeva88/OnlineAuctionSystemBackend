@@ -26,6 +26,12 @@ namespace OnlineAuctionSystem.Domain.Entities
         public decimal CurrentHighestBid => Bids.Count > 0 ? Bids.Max(b => b.Amount) : StartingPrice;
 
         public bool IsExpired => DateTime.UtcNow >= EndTime;
+
+        // Optimistic concurrency token: prevents two simultaneous bids from
+        // both reading the same CurrentHighestBid and both being accepted.
+        // EF Core throws DbUpdateConcurrencyException if the row changed
+        // between read and save; PlaceBidCommandHandler catches this.
+        public byte[] RowVersion { get; set; } = default!;
     }
 
 }

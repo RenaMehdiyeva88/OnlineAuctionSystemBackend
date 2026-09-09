@@ -1,11 +1,12 @@
 using AutoMapper;
 using MediatR;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
-using OnlineAuctionSystem.Application.Notifications.DTOs;
+using OnlineAuctionSystem.Contracts.Common;
+using OnlineAuctionSystem.Contracts.Notifications;
 
 namespace OnlineAuctionSystem.Application.Notifications.Queries.GetNotifications
 {
-    public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuery, List<NotificationDto>>
+    public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuery, PagedResult<NotificationDto>>
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IMapper _mapper;
@@ -16,10 +17,13 @@ namespace OnlineAuctionSystem.Application.Notifications.Queries.GetNotifications
             _mapper = mapper;
         }
 
-        public async Task<List<NotificationDto>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
+        public async Task<PagedResult<NotificationDto>> Handle(GetNotificationsQuery request, CancellationToken cancellationToken)
         {
-            var notifications = await _notificationRepository.GetByUserIdAsync(request.UserId, cancellationToken);
-            return _mapper.Map<List<NotificationDto>>(notifications);
+            var (notifications, totalCount) = await _notificationRepository.GetByUserIdAsync(
+                request.UserId, request.PageNumber, request.PageSize, cancellationToken);
+
+            return new PagedResult<NotificationDto>(
+                _mapper.Map<List<NotificationDto>>(notifications), request.PageNumber, request.PageSize, totalCount);
         }
     }
 }

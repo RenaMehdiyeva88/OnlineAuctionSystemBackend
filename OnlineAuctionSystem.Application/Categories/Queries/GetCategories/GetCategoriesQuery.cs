@@ -1,5 +1,5 @@
 using MediatR;
-using OnlineAuctionSystem.Application.Categories.DTOs;
+using OnlineAuctionSystem.Contracts.Categories;
 
 namespace OnlineAuctionSystem.Application.Categories.Queries.GetCategories;
 

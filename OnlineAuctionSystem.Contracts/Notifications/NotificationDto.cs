@@ -1,10 +1,11 @@
 ﻿namespace OnlineAuctionSystem.Contracts.Notifications
 {
     public record NotificationDto(
-    Guid Id,
-    string Message,
-    bool IsRead,
-    DateTime CreatedAt,
-    Guid? AuctionId
-);
+        Guid Id,
+        string Message,
+        bool IsRead,
+        DateTime CreatedAt,
+        Guid UserId,
+        Guid? AuctionId
+    );
 }

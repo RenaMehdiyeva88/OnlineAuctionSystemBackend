@@ -2,9 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineAuctionSystem.Application.Bids.Commands.PlaceBid;
-using OnlineAuctionSystem.Application.Bids.DTOs;
 using OnlineAuctionSystem.Application.Bids.Queries.GetBidHistory;
 using OnlineAuctionSystem.Contracts.Bids;
+using OnlineAuctionSystem.Contracts.Common;
 using System.Security.Claims;
 
 namespace OnlineAuctionSystem.Presentation.Controllers
@@ -24,7 +24,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F3 — real-time bid placement; outbid notifications are pushed from the handler via INotificationService.
         [HttpPost("bids")]
         [Authorize(Roles = "Buyer")]
-        public async Task<ActionResult<Application.Bids.DTOs.BidDto>> PlaceBid(PlaceBidRequest request, CancellationToken cancellationToken)
+        public async Task<ActionResult<BidDto>> PlaceBid(PlaceBidRequest request, CancellationToken cancellationToken)
         {
             var bidderId = GetCurrentUserId();
             var result = await _mediator.Send(new PlaceBidCommand(
@@ -34,12 +34,13 @@ namespace OnlineAuctionSystem.Presentation.Controllers
             return Ok(result);
         }
 
-        // F7 — full bid history, visible to all users (no auth required).
+        // F7 — paginated bid history, visible to all users (no auth required).
         [HttpGet("auctions/{auctionId:guid}/bids")]
         [AllowAnonymous]
-        public async Task<ActionResult<List<Application.Bids.DTOs.BidDto>>> GetHistory(Guid auctionId, CancellationToken cancellationToken)
+        public async Task<ActionResult<PagedResult<BidDto>>> GetHistory(
+            Guid auctionId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(new GetBidHistoryQuery(auctionId), cancellationToken);
+            var result = await _mediator.Send(new GetBidHistoryQuery(auctionId, pageNumber, pageSize), cancellationToken);
             return Ok(result);
         }
 

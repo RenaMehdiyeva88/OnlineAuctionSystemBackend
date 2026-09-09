@@ -62,6 +62,11 @@ namespace OnlineAuctionSystem.Persistence.Configurations
             builder.Ignore(a => a.CurrentHighestBid);
             builder.Ignore(a => a.IsExpired);
 
+            // Optimistic concurrency: SQL Server ROWVERSION column, auto-updated
+            // by the DB on every UPDATE. Guards against race conditions when two
+            // bids are placed on the same auction at nearly the same time.
+            builder.Property(a => a.RowVersion).IsRowVersion();
+
             // F4 — speeds up the background job's poll for expired active auctions.
             builder.HasIndex(a => new { a.Status, a.EndTime });
 

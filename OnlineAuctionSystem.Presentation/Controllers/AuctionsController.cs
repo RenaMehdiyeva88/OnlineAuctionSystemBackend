@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineAuctionSystem.Application.Auctions.Commands.CloseAuction;
 using OnlineAuctionSystem.Application.Auctions.Commands.CreateAuction;
-using OnlineAuctionSystem.Application.Auctions.DTOs;
 using OnlineAuctionSystem.Application.Auctions.Queries.GetAuctionById;
-using OnlineAuctionSystem.Application.Auctions.Queries.GetAuctions;
 using OnlineAuctionSystem.Application.Auctions.Queries.GetAuctionsByCategory;
 using OnlineAuctionSystem.Contracts.Auctions;
 using System.Security.Claims;
@@ -27,7 +25,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F8 — keyword + category + price range search. Anonymous: buyers browse without logging in.
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<List<Application.Auctions.DTOs.AuctionListItemDto>>> Search(
+        public async Task<ActionResult<List<AuctionListItemDto>>> Search(
             [FromQuery] AuctionSearchRequest request, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAuctionsByCategoryQuery(
@@ -42,7 +40,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
 
         [HttpGet("{id:guid}")]
         [AllowAnonymous]
-        public async Task<ActionResult<Application.Auctions.DTOs.AuctionDto>> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<ActionResult<AuctionDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAuctionByIdQuery(id), cancellationToken);
             return Ok(result);
@@ -51,7 +49,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F8 — category-based browsing.
         [HttpGet("category/{categoryId:guid}")]
         [AllowAnonymous]
-        public async Task<ActionResult<List<Application.Auctions.DTOs.AuctionListItemDto>>> GetByCategory(Guid categoryId, CancellationToken cancellationToken)
+        public async Task<ActionResult<List<AuctionListItemDto>>> GetByCategory(Guid categoryId, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAuctionsByCategoryQuery(
                 null,
@@ -66,7 +64,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F2 — listing creation: title, description, starting price, end time. Sellers only.
         [HttpPost]
         [Authorize(Roles = "Seller")]
-        public async Task<ActionResult<Application.Auctions.DTOs.AuctionDto>> Create(CreateAuctionRequest request, CancellationToken cancellationToken)
+        public async Task<ActionResult<AuctionDto>> Create(CreateAuctionRequest request, CancellationToken cancellationToken)
         {
             var sellerId = GetCurrentUserId();
             var result = await _mediator.Send(new CreateAuctionCommand(
@@ -85,7 +83,10 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         [Authorize(Roles = "Seller")]
         public async Task<IActionResult> Close(Guid id, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new CloseAuctionCommand(id), cancellationToken);
+            // Ownership is enforced in CloseAuctionCommandHandler by comparing
+            // this to auction.SellerId — never trust an ID from the client here.
+            var currentUserId = GetCurrentUserId();
+            await _mediator.Send(new CloseAuctionCommand(id, currentUserId), cancellationToken);
             return NoContent();
         }
 

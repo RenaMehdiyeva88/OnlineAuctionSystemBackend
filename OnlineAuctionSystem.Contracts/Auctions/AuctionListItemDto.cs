@@ -5,9 +5,11 @@
         Guid Id,
         string Title,
         string? ImageUrl,
+        decimal StartingPrice,
         decimal CurrentHighestBid,
         DateTime EndTime,
         string Status,
+        Guid SellerId,
         string CategoryName
     );
 }
