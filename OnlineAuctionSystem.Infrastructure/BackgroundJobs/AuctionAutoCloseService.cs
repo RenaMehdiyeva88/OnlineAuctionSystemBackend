@@ -50,55 +50,65 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
 
             var expiredAuctions = await auctionRepository.GetExpiredActiveAuctionsAsync(cancellationToken);
 
-            // Collect who needs notifying as we go, but don't send anything
-            // over SignalR until after SaveChangesAsync succeeds below — same
-            // fix as CloseAuctionCommandHandler: don't tell clients "auction
-            // closed, X won" if that write could still fail and roll back.
-            var pendingNotifications = new List<(Guid UserId, Guid AuctionId, decimal? Amount, bool IsWinner)>();
-
+            // Each auction is closed and saved INDIVIDUALLY, inside its own
+            // try/catch. The old code mutated every expired auction in
+            // memory and called SaveChangesAsync ONCE for the whole batch —
+            // if even one auction hit a concurrency conflict or FK issue,
+            // that single SaveChangesAsync threw and rolled back every other
+            // auction in the batch too, silently leaving otherwise-fine
+            // auctions still "Active" just because one had a problem. Now a
+            // failure on one auction is logged and skipped; the rest still
+            // close normally on this pass (and a still-broken one is simply
+            // retried on the next 30s tick, since it stays in
+            // GetExpiredActiveAuctionsAsync's results until it succeeds).
             foreach (var auction in expiredAuctions)
             {
-                auction.Status = AuctionStatus.Closed;
-
-                var winningBid = auction.Bids.Count > 0 ? auction.Bids.MaxBy(b => b.Amount) : null;
-                if (winningBid is not null)
+                try
                 {
-                    auction.WinnerId = winningBid.BidderId;
+                    auction.Status = AuctionStatus.Closed;
+
+                    var winningBid = auction.Bids.Count > 0 ? auction.Bids.MaxBy(b => b.Amount) : null;
+                    if (winningBid is not null)
+                    {
+                        auction.WinnerId = winningBid.BidderId;
+
+                        await notificationRepository.AddAsync(new Domain.Entities.Notification
+                        {
+                            UserId = winningBid.BidderId,
+                            AuctionId = auction.Id,
+                            Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {winningBid.Amount:C}."
+                        }, cancellationToken);
+                    }
 
                     await notificationRepository.AddAsync(new Domain.Entities.Notification
                     {
-                        UserId = winningBid.BidderId,
+                        UserId = auction.SellerId,
                         AuctionId = auction.Id,
-                        Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {winningBid.Amount:C}."
+                        Message = winningBid is not null
+                            ? $"Your auction \"{auction.Title}\" has closed. Winning bid: {winningBid.Amount:C}."
+                            : $"Your auction \"{auction.Title}\" has closed with no bids."
                     }, cancellationToken);
 
-                    pendingNotifications.Add((winningBid.BidderId, auction.Id, winningBid.Amount, IsWinner: true));
+                    // Save THIS auction's changes before notifying — same
+                    // save-before-notify ordering as CloseAuctionCommandHandler,
+                    // just scoped to a single auction instead of the whole batch.
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    if (winningBid is not null)
+                    {
+                        await notificationService.NotifyAuctionWonAsync(
+                            winningBid.BidderId, auction.Id, winningBid.Amount, cancellationToken);
+                    }
+                    await notificationService.NotifyAuctionClosedAsync(auction.SellerId, auction.Id, cancellationToken);
+
+                    _logger.LogInformation("Auto-closed auction {AuctionId} ('{Title}').", auction.Id, auction.Title);
                 }
-
-                await notificationRepository.AddAsync(new Domain.Entities.Notification
+                catch (Exception ex)
                 {
-                    UserId = auction.SellerId,
-                    AuctionId = auction.Id,
-                    Message = winningBid is not null
-                        ? $"Your auction \"{auction.Title}\" has closed. Winning bid: {winningBid.Amount:C}."
-                        : $"Your auction \"{auction.Title}\" has closed with no bids."
-                }, cancellationToken);
-
-                pendingNotifications.Add((auction.SellerId, auction.Id, null, IsWinner: false));
-
-                _logger.LogInformation("Auto-closed auction {AuctionId} ('{Title}').", auction.Id, auction.Title);
-            }
-
-            if (expiredAuctions.Count > 0)
-            {
-                await unitOfWork.SaveChangesAsync(cancellationToken);
-
-                foreach (var (userId, auctionId, amount, isWinner) in pendingNotifications)
-                {
-                    if (isWinner)
-                        await notificationService.NotifyAuctionWonAsync(userId, auctionId, amount!.Value, cancellationToken);
-                    else
-                        await notificationService.NotifyAuctionClosedAsync(userId, auctionId, cancellationToken);
+                    // Don't let one bad auction block the rest of the batch —
+                    // log it and move on; it stays "Active" and will be
+                    // picked up again on the next poll.
+                    _logger.LogError(ex, "Failed to auto-close auction {AuctionId}. Will retry on next poll.", auction.Id);
                 }
             }
         }

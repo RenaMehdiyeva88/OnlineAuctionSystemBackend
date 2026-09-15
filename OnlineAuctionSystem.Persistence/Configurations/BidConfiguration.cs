@@ -26,6 +26,11 @@ namespace OnlineAuctionSystem.Persistence.Configurations
 
             // F7 — bid history per auction, most recent first.
             builder.HasIndex(b => new { b.AuctionId, b.CreatedAt });
+
+            // Speeds up GetHighestBidAsync (called on every PlaceBid and
+            // CloseAuction) — without this, SQL Server has to scan and sort
+            // every bid row for an auction just to find the max Amount.
+            builder.HasIndex(b => new { b.AuctionId, b.Amount });
         }
     }
 }

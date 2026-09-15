@@ -5,19 +5,21 @@ using OnlineAuctionSystem.Application.Auctions.Commands.CloseAuction;
 using OnlineAuctionSystem.Application.Auctions.Commands.CreateAuction;
 using OnlineAuctionSystem.Application.Auctions.Queries.GetAuctionById;
 using OnlineAuctionSystem.Application.Auctions.Queries.GetAuctionsByCategory;
+using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 using OnlineAuctionSystem.Contracts.Auctions;
-using System.Security.Claims;
+using OnlineAuctionSystem.Contracts.Common;
 
 namespace OnlineAuctionSystem.Presentation.Controllers
 {
 
     [ApiController]
     [Route("api/auctions")]
-    public class AuctionsController : ControllerBase
+    public class AuctionsController : ApiControllerBase
     {
         private readonly ISender _mediator;
 
-        public AuctionsController(ISender mediator)
+        public AuctionsController(ISender mediator, ICurrentUserService currentUserService)
+            : base(currentUserService)
         {
             _mediator = mediator;
         }
@@ -25,7 +27,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F8 — keyword + category + price range search. Anonymous: buyers browse without logging in.
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<List<AuctionListItemDto>>> Search(
+        public async Task<ActionResult<PagedResult<AuctionListItemDto>>> Search(
             [FromQuery] AuctionSearchRequest request, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAuctionsByCategoryQuery(
@@ -49,15 +51,16 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F8 — category-based browsing.
         [HttpGet("category/{categoryId:guid}")]
         [AllowAnonymous]
-        public async Task<ActionResult<List<AuctionListItemDto>>> GetByCategory(Guid categoryId, CancellationToken cancellationToken)
+        public async Task<ActionResult<PagedResult<AuctionListItemDto>>> GetByCategory(
+            Guid categoryId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         {
             var result = await _mediator.Send(new GetAuctionsByCategoryQuery(
                 null,
                 categoryId,
                 null,
                 null,
-                1,
-                20), cancellationToken);
+                pageNumber,
+                pageSize), cancellationToken);
             return Ok(result);
         }
 
@@ -66,7 +69,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         [Authorize(Roles = "Seller")]
         public async Task<ActionResult<AuctionDto>> Create(CreateAuctionRequest request, CancellationToken cancellationToken)
         {
-            var sellerId = GetCurrentUserId();
+            var sellerId = CurrentUserId;
             var result = await _mediator.Send(new CreateAuctionCommand(
                 request.Title,
                 request.Description,
@@ -85,12 +88,10 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         {
             // Ownership is enforced in CloseAuctionCommandHandler by comparing
             // this to auction.SellerId — never trust an ID from the client here.
-            var currentUserId = GetCurrentUserId();
+            var currentUserId = CurrentUserId;
             await _mediator.Send(new CloseAuctionCommand(id, currentUserId), cancellationToken);
             return NoContent();
         }
 
-        private Guid GetCurrentUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

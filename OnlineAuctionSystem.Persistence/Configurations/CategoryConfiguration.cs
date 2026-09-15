@@ -4,7 +4,7 @@ using OnlineAuctionSystem.Domain.Entities;
 
 namespace OnlineAuctionSystem.Persistence.Configurations
 {
-    public class CategoryConfiguration
+    public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {

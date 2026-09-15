@@ -16,45 +16,47 @@ namespace OnlineAuctionSystem.Application.Common.Mappings
     // NOTE: handlers now map from in-memory lists returned by repositories
     // (List<Entity>), not from IQueryable<Entity> — so we use Mapper.Map(...)
     // rather than ProjectTo<T>(...), since repositories hide EF Core entirely.
+    //
+    // IMPORTANT: every DTO here is a C# record with a required-parameter
+    // constructor (no parameterless ctor, no property setters). AutoMapper
+    // needs .ForCtorParam(...) — NOT .ForMember(...) — to map into a
+    // constructor parameter. Using .ForMember() on a record silently tells
+    // AutoMapper to fall back to "new T() + property setters", which
+    // crashes at runtime with "needs to have a constructor with 0 args or
+    // only optional args" the moment it actually tries to build one,
+    // because records have no such constructor.
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
             CreateMap<User, UserDto>()
-                .ForMember(d => d.Role, opt => opt.MapFrom(s => s.Role.ToString()));
+                .ForCtorParam("Role", opt => opt.MapFrom(s => s.Role.ToString()));
 
             CreateMap<Category, CategoryDto>();
 
             CreateMap<Auction, AuctionDto>()
-                .ForMember(d => d.CurrentHighestBid, opt => opt.MapFrom(s => s.CurrentHighestBid))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.SellerId, opt => opt.MapFrom(s => s.SellerId))
-                .ForMember(d => d.SellerName, opt => opt.MapFrom(s => s.Seller.Username))
-                .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId))
-                .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category.Name))
-                .ForMember(d => d.WinnerName, opt => opt.MapFrom(s => s.Winner != null ? s.Winner.Username : null));
+                .ForCtorParam("CurrentHighestBid", opt => opt.MapFrom(s => s.CurrentHighestBid))
+                .ForCtorParam("Status", opt => opt.MapFrom(s => s.Status.ToString()))
+                .ForCtorParam("SellerName", opt => opt.MapFrom(s => s.Seller.Username))
+                .ForCtorParam("CategoryName", opt => opt.MapFrom(s => s.Category.Name))
+                .ForCtorParam("WinnerName", opt => opt.MapFrom(s => s.Winner != null ? s.Winner.Username : null));
 
             CreateMap<Auction, AuctionListItemDto>()
-                .ForMember(d => d.CurrentHighestBid, opt => opt.MapFrom(s => s.CurrentHighestBid))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.SellerId, opt => opt.MapFrom(s => s.SellerId))
-                .ForMember(d => d.CategoryName, opt => opt.MapFrom(s => s.Category.Name));
+                .ForCtorParam("CurrentHighestBid", opt => opt.MapFrom(s => s.CurrentHighestBid))
+                .ForCtorParam("Status", opt => opt.MapFrom(s => s.Status.ToString()))
+                .ForCtorParam("CategoryName", opt => opt.MapFrom(s => s.Category.Name));
 
             // F6: seller dashboard projection
             CreateMap<Auction, SellerAuctionDto>()
-                .ForMember(d => d.CurrentHighestBid, opt => opt.MapFrom(s => s.CurrentHighestBid))
-                .ForMember(d => d.TotalBids, opt => opt.MapFrom(s => s.Bids.Count))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.WinnerId, opt => opt.MapFrom(s => s.WinnerId))
-                .ForMember(d => d.WinnerName, opt => opt.MapFrom(s => s.Winner != null ? s.Winner.Username : null));
+                .ForCtorParam("CurrentHighestBid", opt => opt.MapFrom(s => s.CurrentHighestBid))
+                .ForCtorParam("TotalBids", opt => opt.MapFrom(s => s.Bids.Count))
+                .ForCtorParam("Status", opt => opt.MapFrom(s => s.Status.ToString()))
+                .ForCtorParam("WinnerName", opt => opt.MapFrom(s => s.Winner != null ? s.Winner.Username : null));
 
             CreateMap<Bid, BidDto>()
-                .ForMember(d => d.AuctionId, opt => opt.MapFrom(s => s.AuctionId))
-                .ForMember(d => d.BidderId, opt => opt.MapFrom(s => s.BidderId))
-                .ForMember(d => d.BidderName, opt => opt.MapFrom(s => s.Bidder.Username));
+                .ForCtorParam("BidderName", opt => opt.MapFrom(s => s.Bidder.Username));
 
-            CreateMap<Notification, NotificationDto>()
-                .ForMember(d => d.UserId, opt => opt.MapFrom(s => s.UserId));
+            CreateMap<Notification, NotificationDto>();
         }
     }
 }

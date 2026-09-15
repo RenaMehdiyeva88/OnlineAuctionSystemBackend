@@ -1,28 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\OnlineAuctionSystem.Application\OnlineAuctionSystem.Application.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<!-- Gives access to the real ASP.NET Core / SignalR assemblies that ship
+         with the .NET 8 SDK, replacing the two obsolete standalone NuGet
+         packages below (Microsoft.AspNetCore.Http 2.2.2 and
+         Microsoft.AspNetCore.SignalR 1.1.0 predate .NET Core 3 and are years
+         out of date on a .NET 8 project — they also caused an NU1605/NU1603
+         downgrade warning against the SDK-provided versions). -->
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
-      <IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-      <ExcludeAssets>contentfiles</ExcludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.2" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\OnlineAuctionSystem.Application\OnlineAuctionSystem.Application.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+			<IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<ExcludeAssets>contentfiles</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.1" />
+	</ItemGroup>
 
 </Project>

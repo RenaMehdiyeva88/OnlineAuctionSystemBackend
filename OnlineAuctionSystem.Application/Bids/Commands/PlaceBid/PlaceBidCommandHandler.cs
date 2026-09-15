@@ -57,10 +57,25 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
                 throw new ForbiddenException("Sellers cannot bid on their own auctions.");
 
             var previousTopBid = await _bidRepository.GetHighestBidAsync(auction.Id, cancellationToken);
-            var currentHighest = previousTopBid?.Amount ?? auction.StartingPrice;
 
-            if (request.Amount <= currentHighest)
-                throw new InvalidBidException($"Bid must be higher than the current highest bid ({currentHighest}).");
+            // The very first bid on an auction is allowed to equal the starting
+            // price exactly — only subsequent bids must strictly exceed the
+            // current highest. The old code compared against
+            // (previousTopBid?.Amount ?? auction.StartingPrice) with a plain
+            // "<=" check either way, which silently rejected a first bid equal
+            // to the starting price (e.g. StartingPrice=100, first bid of 100
+            // failed "100 <= 100").
+            var isFirstBid = previousTopBid is null;
+
+            if (isFirstBid)
+            {
+                if (request.Amount < auction.StartingPrice)
+                    throw new InvalidBidException($"First bid must be at least the starting price ({auction.StartingPrice}).");
+            }
+            else if (request.Amount <= previousTopBid!.Amount)
+            {
+                throw new InvalidBidException($"Bid must be higher than the current highest bid ({previousTopBid!.Amount}).");
+            }
 
             var bid = new Bid
             {

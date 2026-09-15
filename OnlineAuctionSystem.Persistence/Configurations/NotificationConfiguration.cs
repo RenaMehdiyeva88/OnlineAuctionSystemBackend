@@ -4,7 +4,7 @@ using OnlineAuctionSystem.Domain.Entities;
 
 namespace OnlineAuctionSystem.Persistence.Configurations
 {
-    public class NotificationConfiguration
+    public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
     {
         public void Configure(EntityTypeBuilder<Notification> builder)
         {

@@ -4,19 +4,20 @@ using Microsoft.AspNetCore.Mvc;
 using OnlineAuctionSystem.Application.Bids.Commands.PlaceBid;
 using OnlineAuctionSystem.Application.Bids.Queries.GetBidHistory;
 using OnlineAuctionSystem.Contracts.Bids;
+using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 using OnlineAuctionSystem.Contracts.Common;
-using System.Security.Claims;
 
 namespace OnlineAuctionSystem.Presentation.Controllers
 {
 
     [ApiController]
     [Route("api")]
-    public class BidsController : ControllerBase
+    public class BidsController : ApiControllerBase
     {
         private readonly ISender _mediator;
 
-        public BidsController(ISender mediator)
+        public BidsController(ISender mediator, ICurrentUserService currentUserService)
+            : base(currentUserService)
         {
             _mediator = mediator;
         }
@@ -26,7 +27,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         [Authorize(Roles = "Buyer")]
         public async Task<ActionResult<BidDto>> PlaceBid(PlaceBidRequest request, CancellationToken cancellationToken)
         {
-            var bidderId = GetCurrentUserId();
+            var bidderId = CurrentUserId;
             var result = await _mediator.Send(new PlaceBidCommand(
                 request.AuctionId,
                 bidderId,
@@ -44,7 +45,5 @@ namespace OnlineAuctionSystem.Presentation.Controllers
             return Ok(result);
         }
 
-        private Guid GetCurrentUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

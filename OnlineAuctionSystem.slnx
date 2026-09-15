@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="OnlineAuctionSystem.Application.Tests/OnlineAuctionSystem.Application.Tests.csproj" Id="e4fae96d-0e64-4119-9c4b-5f2e0c469c2d" />
   <Project Path="OnlineAuctionSystem.Application/OnlineAuctionSystem.Application.csproj" />
   <Project Path="OnlineAuctionSystem.Contracts/OnlineAuctionSystem.Contracts.csproj" />
   <Project Path="OnlineAuctionSystem.Domain/OnlineAuctionSystem.Domain.csproj" />
