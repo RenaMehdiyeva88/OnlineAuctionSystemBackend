@@ -76,7 +76,16 @@ namespace OnlineAuctionSystem.Infrastructure.Identity
                     return null;
                 }
 
-                var sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                // NOT JwtRegisteredClaimNames.Sub here — JwtSecurityTokenHandler's
+                // DefaultInboundClaimTypeMap silently renames the "sub" claim to
+                // the long ClaimTypes.NameIdentifier URI during ValidateToken(),
+                // so principal.FindFirst("sub") always returned null post-
+                // validation and this method always returned null, silently
+                // breaking the refresh-token flow (every refresh attempt looked
+                // like an invalid token, even a perfectly valid one). We also
+                // add ClaimTypes.NameIdentifier explicitly in
+                // GenerateAccessToken, so this claim is guaranteed present.
+                var sub = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 return sub is not null && Guid.TryParse(sub, out var userId) ? userId : null;
             }
             catch

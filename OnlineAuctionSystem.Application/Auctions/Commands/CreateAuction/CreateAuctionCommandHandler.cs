@@ -50,6 +50,7 @@ namespace OnlineAuctionSystem.Application.Auctions.Commands.CreateAuction
                 EndTime = request.EndTime,
                 CategoryId = category.Id,
                 SellerId = seller.Id,
+                MinimumIncrement = request.MinimumIncrement,
                 Status = AuctionStatus.Active
             };
 

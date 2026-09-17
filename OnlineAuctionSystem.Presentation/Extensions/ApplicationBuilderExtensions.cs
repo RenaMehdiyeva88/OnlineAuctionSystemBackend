@@ -22,6 +22,9 @@ namespace OnlineAuctionSystem.Presentation.Extensions
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseHttpsRedirection();
+            // Serves wwwroot/uploads/* as /uploads/* — required for uploaded
+            // auction photos (LocalFileStorageService) to be viewable at all.
+            app.UseStaticFiles();
             app.UseCors("Default");
             app.UseAuthentication();
             app.UseAuthorization();

@@ -26,6 +26,11 @@ namespace OnlineAuctionSystem.Persistence.Configurations
                 .HasColumnType("decimal(18,2)")
                 .IsRequired();
 
+            builder.Property(a => a.MinimumIncrement)
+                .HasColumnType("decimal(18,2)")
+                .HasDefaultValue(1.00m)
+                .IsRequired();
+
             builder.Property(a => a.EndTime)
                 .IsRequired();
 
@@ -72,6 +77,14 @@ namespace OnlineAuctionSystem.Persistence.Configurations
 
             // F8 — speeds up category + price-range browsing/search.
             builder.HasIndex(a => a.CategoryId);
+
+            // F6 — seller dashboard queries filter by SellerId on every load;
+            // without this, GetBySellerAsync does a full table scan as the
+            // Auctions table grows.
+            builder.HasIndex(a => a.SellerId);
+
+            // Speeds up any "auctions I've won" lookup by WinnerId.
+            builder.HasIndex(a => a.WinnerId);
         }
     }
 }

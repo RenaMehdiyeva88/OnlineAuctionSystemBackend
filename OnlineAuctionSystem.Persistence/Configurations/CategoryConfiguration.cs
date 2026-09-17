@@ -20,6 +20,13 @@ namespace OnlineAuctionSystem.Persistence.Configurations
                 .WithOne(a => a.Category)
                 .HasForeignKey(a => a.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Soft delete: an admin "deleting" a category just flips IsDeleted,
+            // never a real DELETE (existing auctions still reference the row).
+            // This filter makes every query against Categories automatically
+            // exclude soft-deleted rows, with zero changes needed in any
+            // repository or handler that queries categories.
+            builder.HasQueryFilter(c => !c.IsDeleted);
         }
     }
 }

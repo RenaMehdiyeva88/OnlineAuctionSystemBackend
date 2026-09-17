@@ -6,6 +6,7 @@
         string Description,
         string? ImageUrl,
         decimal StartingPrice,
+        decimal MinimumIncrement,
         decimal CurrentHighestBid,
         DateTime EndTime,
         string Status,

@@ -6,6 +6,7 @@ using OnlineAuctionSystem.Infrastructure.BackgroundJobs;
 using OnlineAuctionSystem.Infrastructure.Identity;
 using OnlineAuctionSystem.Infrastructure.Notifications;
 using OnlineAuctionSystem.Infrastructure.Services;
+using OnlineAuctionSystem.Infrastructure.Storage;
 
 namespace OnlineAuctionSystem.Infrastructure.DependencyInjection
 {
@@ -21,6 +22,7 @@ namespace OnlineAuctionSystem.Infrastructure.DependencyInjection
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             // Services
             services.AddSingleton<IDateTime, DateTimeService>();

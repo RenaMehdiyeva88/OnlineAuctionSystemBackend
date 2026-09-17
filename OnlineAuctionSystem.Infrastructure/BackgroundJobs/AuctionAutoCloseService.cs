@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 using OnlineAuctionSystem.Domain.Enums;
@@ -41,30 +42,41 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
 
         private async Task CloseExpiredAuctionsAsync(CancellationToken cancellationToken)
         {
-            using var scope = _scopeFactory.CreateScope();
-
-            var auctionRepository = scope.ServiceProvider.GetRequiredService<IAuctionRepository>();
-            var notificationRepository = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
-            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-            var expiredAuctions = await auctionRepository.GetExpiredActiveAuctionsAsync(cancellationToken);
-
-            // Each auction is closed and saved INDIVIDUALLY, inside its own
-            // try/catch. The old code mutated every expired auction in
-            // memory and called SaveChangesAsync ONCE for the whole batch —
-            // if even one auction hit a concurrency conflict or FK issue,
-            // that single SaveChangesAsync threw and rolled back every other
-            // auction in the batch too, silently leaving otherwise-fine
-            // auctions still "Active" just because one had a problem. Now a
-            // failure on one auction is logged and skipped; the rest still
-            // close normally on this pass (and a still-broken one is simply
-            // retried on the next 30s tick, since it stays in
-            // GetExpiredActiveAuctionsAsync's results until it succeeds).
-            foreach (var auction in expiredAuctions)
+            // Short-lived scope just to get the list of IDs — closed immediately
+            // after, so its DbContext/ChangeTracker never lives across the loop.
+            List<Guid> expiredAuctionIds;
+            using (var listScope = _scopeFactory.CreateScope())
             {
+                var listRepo = listScope.ServiceProvider.GetRequiredService<IAuctionRepository>();
+                var expiredAuctions = await listRepo.GetExpiredActiveAuctionsAsync(cancellationToken);
+                expiredAuctionIds = expiredAuctions.Select(a => a.Id).ToList();
+            }
+
+            foreach (var auctionId in expiredAuctionIds)
+            {
+                // A BRAND NEW scope (and therefore a brand new DbContext/
+                // ChangeTracker) per auction. The old code shared ONE scope
+                // for the entire batch: if auction #1 failed mid-save, its
+                // half-modified entities stayed tracked as Modified/Added in
+                // that same DbContext, and the next SaveChangesAsync (for
+                // auction #2) tried to re-save auction #1's broken changes
+                // too — one bad auction could silently block every other
+                // auction in the batch from closing. A fresh scope per
+                // auction means a failure is fully contained: its
+                // ChangeTracker is disposed along with the scope and can
+                // never leak into the next auction's save.
+                using var itemScope = _scopeFactory.CreateScope();
+                var auctionRepository = itemScope.ServiceProvider.GetRequiredService<IAuctionRepository>();
+                var notificationRepository = itemScope.ServiceProvider.GetRequiredService<INotificationRepository>();
+                var notificationService = itemScope.ServiceProvider.GetRequiredService<INotificationService>();
+                var unitOfWork = itemScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
                 try
                 {
+                    var auction = await auctionRepository.GetByIdAsync(auctionId, cancellationToken);
+                    if (auction is null || auction.Status != AuctionStatus.Active)
+                        continue; // already closed by a manual close or a previous tick
+
                     auction.Status = AuctionStatus.Closed;
 
                     var winningBid = auction.Bids.Count > 0 ? auction.Bids.MaxBy(b => b.Amount) : null;
@@ -76,7 +88,7 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
                         {
                             UserId = winningBid.BidderId,
                             AuctionId = auction.Id,
-                            Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {winningBid.Amount:C}."
+                            Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {CurrencyFormatter.Format(winningBid.Amount)}."
                         }, cancellationToken);
                     }
 
@@ -85,7 +97,7 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
                         UserId = auction.SellerId,
                         AuctionId = auction.Id,
                         Message = winningBid is not null
-                            ? $"Your auction \"{auction.Title}\" has closed. Winning bid: {winningBid.Amount:C}."
+                            ? $"Your auction \"{auction.Title}\" has closed. Winning bid: {CurrencyFormatter.Format(winningBid.Amount)}."
                             : $"Your auction \"{auction.Title}\" has closed with no bids."
                     }, cancellationToken);
 
@@ -108,7 +120,7 @@ namespace OnlineAuctionSystem.Infrastructure.BackgroundJobs
                     // Don't let one bad auction block the rest of the batch —
                     // log it and move on; it stays "Active" and will be
                     // picked up again on the next poll.
-                    _logger.LogError(ex, "Failed to auto-close auction {AuctionId}. Will retry on next poll.", auction.Id);
+                    _logger.LogError(ex, "Failed to auto-close auction {AuctionId}. Will retry on next poll.", auctionId);
                 }
             }
         }

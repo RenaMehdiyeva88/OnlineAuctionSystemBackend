@@ -47,7 +47,13 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
             var auction = await _auctionRepository.GetByIdAsync(request.AuctionId, cancellationToken)
                 ?? throw new NotFoundException(nameof(Auction), request.AuctionId);
 
-            if (auction.Status != AuctionStatus.Active || auction.IsExpired)
+            // Uses the injected IDateTime, NOT auction.IsExpired (which reads
+            // DateTime.UtcNow directly) — a handler must never read the real
+            // system clock itself, or it becomes untestable: unit tests fix
+            // "now" via a mocked IDateTime, and an entity that ignores that
+            // mock and reads the real clock will always disagree with
+            // whatever fake EndTime the test set up.
+            if (auction.Status != AuctionStatus.Active || auction.EndTime <= _dateTime.UtcNow)
                 throw new AuctionClosedException(auction.Id);
 
             var bidder = await _userRepository.GetByIdAsync(request.BidderId, cancellationToken)
@@ -72,9 +78,14 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
                 if (request.Amount < auction.StartingPrice)
                     throw new InvalidBidException($"First bid must be at least the starting price ({auction.StartingPrice}).");
             }
-            else if (request.Amount <= previousTopBid!.Amount)
+            else if (request.Amount < previousTopBid!.Amount + auction.MinimumIncrement)
             {
-                throw new InvalidBidException($"Bid must be higher than the current highest bid ({previousTopBid!.Amount}).");
+                // Minimum increment: a bid of 100.01 over a 100.00 highest bid
+                // used to be accepted, which lets an auction be "won" by a
+                // single cent — most real auction sites require a meaningful
+                // minimum raise (auction.MinimumIncrement, default 1.00).
+                throw new InvalidBidException(
+                    $"Bid must be at least {auction.MinimumIncrement} higher than the current highest bid ({previousTopBid!.Amount}).");
             }
 
             var bid = new Bid

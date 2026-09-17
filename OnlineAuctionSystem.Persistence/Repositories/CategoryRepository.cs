@@ -21,5 +21,20 @@ namespace OnlineAuctionSystem.Persistence.Repositories
 
         public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
             await _context.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        public async Task<bool> NameExistsAsync(string name, Guid? excludeId = null, CancellationToken cancellationToken = default) =>
+            await _context.Categories.AnyAsync(
+                c => c.Name.ToLower() == name.ToLower() && (excludeId == null || c.Id != excludeId), cancellationToken);
+
+        public async Task AddAsync(Category category, CancellationToken cancellationToken = default) =>
+            await _context.Categories.AddAsync(category, cancellationToken);
+
+        public void Update(Category category) => _context.Categories.Update(category);
+
+        public void SoftDelete(Category category)
+        {
+            category.IsDeleted = true;
+            _context.Categories.Update(category);
+        }
     }
 }

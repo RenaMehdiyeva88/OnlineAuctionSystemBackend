@@ -1,4 +1,5 @@
 using MediatR;
+using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
@@ -54,7 +55,7 @@ namespace OnlineAuctionSystem.Application.Auctions.Commands.CloseAuction
                 {
                     UserId = winningBid.BidderId,
                     AuctionId = auction.Id,
-                    Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {winningBid.Amount}."
+                    Message = $"Congratulations! You won the auction \"{auction.Title}\" with a bid of {CurrencyFormatter.Format(winningBid.Amount)}."
                 }, cancellationToken);
             }
 
@@ -62,7 +63,9 @@ namespace OnlineAuctionSystem.Application.Auctions.Commands.CloseAuction
             {
                 UserId = auction.SellerId,
                 AuctionId = auction.Id,
-                Message = $"Your auction \"{auction.Title}\" has closed."
+                Message = winningBid is not null
+                    ? $"Your auction \"{auction.Title}\" has closed. Winning bid: {CurrencyFormatter.Format(winningBid.Amount)}."
+                    : $"Your auction \"{auction.Title}\" has closed with no bids."
             }, cancellationToken);
 
             _auctionRepository.Update(auction);

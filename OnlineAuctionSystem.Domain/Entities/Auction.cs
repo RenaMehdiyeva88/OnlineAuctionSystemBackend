@@ -9,6 +9,12 @@ namespace OnlineAuctionSystem.Domain.Entities
         public string Description { get; set; } = default!;
         public string? ImageUrl { get; set; }
         public decimal StartingPrice { get; set; }
+
+        // Smallest amount a new bid must exceed the current highest by.
+        // Without this, a bidder could "win" by a single cent (e.g. 100.01
+        // over a 100.00 bid), which most real auction sites disallow.
+        public decimal MinimumIncrement { get; set; } = 1.00m;
+
         public DateTime EndTime { get; set; }
         public AuctionStatus Status { get; set; } = AuctionStatus.Active;
 
