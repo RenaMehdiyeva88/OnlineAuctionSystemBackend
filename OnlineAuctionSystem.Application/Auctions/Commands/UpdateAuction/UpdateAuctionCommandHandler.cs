@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using OnlineAuctionSystem.Contracts.Auctions;
 using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
@@ -41,9 +42,6 @@ namespace OnlineAuctionSystem.Application.Auctions.Commands.UpdateAuction
             if (auction.Status != AuctionStatus.Active)
                 throw new ForbiddenException("Closed or cancelled auctions cannot be edited.");
 
-            // Editing price/end-time/etc. after someone has already bid under
-            // the OLD terms would be unfair to that bidder — once there's a
-            // bid, the listing is locked.
             var existingBid = await _bidRepository.GetHighestBidAsync(auction.Id, cancellationToken);
             if (existingBid is not null)
                 throw new ForbiddenException("This auction already has bids and can no longer be edited.");
@@ -60,7 +58,16 @@ namespace OnlineAuctionSystem.Application.Auctions.Commands.UpdateAuction
             auction.MinimumIncrement = request.MinimumIncrement;
 
             _auctionRepository.Update(auction);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new ConflictException(
+                    "This auction was just modified elsewhere. Please refresh and try again.");
+            }
 
             auction.Category = category;
             return _mapper.Map<AuctionDto>(auction);

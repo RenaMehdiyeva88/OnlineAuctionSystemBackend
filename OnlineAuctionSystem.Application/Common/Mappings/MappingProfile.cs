@@ -8,28 +8,16 @@ using OnlineAuctionSystem.Domain.Entities;
 
 namespace OnlineAuctionSystem.Application.Common.Mappings
 {
-
-    // Single custom AutoMapper profile for the whole Application layer.
-    // All response DTOs live in OnlineAuctionSystem.Contracts (single source of
-    // truth — there used to be a duplicate, slightly-diverged set of classes
-    // under Application/*/DTOs, which this profile no longer references).
-    // NOTE: handlers now map from in-memory lists returned by repositories
-    // (List<Entity>), not from IQueryable<Entity> — so we use Mapper.Map(...)
-    // rather than ProjectTo<T>(...), since repositories hide EF Core entirely.
-    //
-    // IMPORTANT: every DTO here is a C# record with a required-parameter
-    // constructor (no parameterless ctor, no property setters). AutoMapper
-    // needs .ForCtorParam(...) — NOT .ForMember(...) — to map into a
-    // constructor parameter. Using .ForMember() on a record silently tells
-    // AutoMapper to fall back to "new T() + property setters", which
-    // crashes at runtime with "needs to have a constructor with 0 args or
-    // only optional args" the moment it actually tries to build one,
-    // because records have no such constructor.
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
             CreateMap<User, UserDto>()
+                .ForCtorParam("Role", opt => opt.MapFrom(s => s.Role.ToString()));
+
+            // Public projection — Email excluded — for viewing OTHER users'
+            // profiles (GET /api/users/{id}). See PublicUserDto.
+            CreateMap<User, PublicUserDto>()
                 .ForCtorParam("Role", opt => opt.MapFrom(s => s.Role.ToString()));
 
             CreateMap<Category, CategoryDto>();

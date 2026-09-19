@@ -91,7 +91,7 @@ namespace OnlineAuctionSystem.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Status", "EndTime");
 
-                    b.ToTable("Auctions");
+                    b.ToTable("Auctions", (string)null);
                 });
 
             modelBuilder.Entity("OnlineAuctionSystem.Domain.Entities.Bid", b =>
@@ -126,7 +126,7 @@ namespace OnlineAuctionSystem.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AuctionId", "CreatedAt");
 
-                    b.ToTable("Bids");
+                    b.ToTable("Bids", (string)null);
                 });
 
             modelBuilder.Entity("OnlineAuctionSystem.Domain.Entities.Category", b =>
@@ -154,7 +154,7 @@ namespace OnlineAuctionSystem.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("OnlineAuctionSystem.Domain.Entities.Notification", b =>
@@ -194,7 +194,7 @@ namespace OnlineAuctionSystem.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId", "IsRead");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("OnlineAuctionSystem.Domain.Entities.User", b =>
@@ -242,7 +242,7 @@ namespace OnlineAuctionSystem.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("OnlineAuctionSystem.Domain.Entities.Auction", b =>

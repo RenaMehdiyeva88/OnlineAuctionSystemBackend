@@ -20,7 +20,6 @@ namespace OnlineAuctionSystem.Presentation.Controllers
             _mediator = mediator;
         }
 
-        // F8 — category list for browsing/filter dropdowns. Public.
         [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<List<CategoryDto>>> GetAll(CancellationToken cancellationToken)
@@ -29,13 +28,12 @@ namespace OnlineAuctionSystem.Presentation.Controllers
             return Ok(result);
         }
 
-        // Everything below is Admin-only category management.
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoryDto>> Create(CreateCategoryRequest request, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new CreateCategoryCommand(request.Name), cancellationToken);
-            return CreatedAtAction(nameof(GetAll), result);
+            return StatusCode(StatusCodes.Status201Created, result);
         }
 
         [HttpPut("{id:guid}")]

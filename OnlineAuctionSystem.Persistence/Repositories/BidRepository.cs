@@ -1,11 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Domain.Entities;
 using OnlineAuctionSystem.Persistence.Context;
 
 namespace OnlineAuctionSystem.Persistence.Repositories
 {
-
     public class BidRepository : IBidRepository
     {
         private readonly AuctionDbContext _context;
@@ -15,10 +15,11 @@ namespace OnlineAuctionSystem.Persistence.Repositories
             _context = context;
         }
 
-        // F7 — paginated bid history per auction, most recent first.
         public async Task<(List<Bid> Items, int TotalCount)> GetByAuctionIdAsync(
             Guid auctionId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
         {
+            (pageNumber, pageSize) = PaginationGuard.Clamp(pageNumber, pageSize);
+
             var query = _context.Bids
                 .Include(b => b.Bidder)
                 .Where(b => b.AuctionId == auctionId)
@@ -33,7 +34,6 @@ namespace OnlineAuctionSystem.Persistence.Repositories
             return (items, totalCount);
         }
 
-        // F3 — used to validate that a new bid beats the current highest.
         public async Task<Bid?> GetHighestBidAsync(Guid auctionId, CancellationToken cancellationToken = default) =>
             await _context.Bids
                 .Where(b => b.AuctionId == auctionId)
@@ -43,5 +43,4 @@ namespace OnlineAuctionSystem.Persistence.Repositories
         public async Task AddAsync(Bid bid, CancellationToken cancellationToken = default) =>
             await _context.Bids.AddAsync(bid, cancellationToken);
     }
-
 }

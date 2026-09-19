@@ -140,6 +140,9 @@ namespace OnlineAuctionSystem.Application.Bids.Commands.PlaceBid
             await _notificationService.NotifyNewBidAsync(
                 auction.SellerId, auction.Id, request.Amount, bidder.Username, cancellationToken);
 
+            await _notificationService.NotifyBidPlacedAsync(
+                auction.Id, request.Amount, bidder.Username, cancellationToken);
+
             bid.Bidder = bidder;
             return _mapper.Map<BidDto>(bid);
         }

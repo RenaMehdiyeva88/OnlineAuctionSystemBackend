@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace OnlineAuctionSystem.Infrastructure.Notifications
 {
-    // Presentation maps this hub at a route (e.g. /hubs/notifications).
-    // Clients connect and are added to a group named after their UserId so we can
-    // push targeted messages (F3 outbid, F5 winner) without broadcasting to everyone.
     public class NotificationHub : Hub
     {
         public override async Task OnConnectedAsync()
@@ -27,6 +24,16 @@ namespace OnlineAuctionSystem.Infrastructure.Notifications
             }
 
             await base.OnDisconnectedAsync(exception);
+        }
+
+        public async Task JoinAuctionGroup(Guid auctionId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"auction-{auctionId}");
+        }
+
+        public async Task LeaveAuctionGroup(Guid auctionId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"auction-{auctionId}");
         }
     }
 }

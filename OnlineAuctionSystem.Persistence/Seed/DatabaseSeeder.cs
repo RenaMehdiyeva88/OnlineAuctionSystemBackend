@@ -7,9 +7,6 @@ using OnlineAuctionSystem.Persistence.Context;
 
 namespace OnlineAuctionSystem.Persistence.Seed
 {
-    // Called once at startup (Program.cs) to guarantee categories and demo accounts exist
-    // along with a comprehensive set of demo auctions (active, closing soon, and closed)
-    // so the app is immediately usable and fully demonstrates all features after first run.
     public static class DatabaseSeeder
     {
         public static async Task SeedAsync(AuctionDbContext context, IPasswordHasher passwordHasher, ILogger logger)
@@ -18,7 +15,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
 
             async Task SeedCoreAsync()
             {
-                // Seed Categories
                 if (!await context.Categories.AnyAsync())
                 {
                     context.Categories.AddRange(
@@ -33,9 +29,9 @@ namespace OnlineAuctionSystem.Persistence.Seed
                     await context.SaveChangesAsync();
                 }
 
-                // Seed Users
                 User? seller = null;
                 User? buyer = null;
+                User? buyer2 = null;
                 if (!await context.Users.AnyAsync())
                 {
                     var demoSeller = new User
@@ -54,21 +50,40 @@ namespace OnlineAuctionSystem.Persistence.Seed
                         Role = UserRole.Buyer
                     };
 
+                    var demoAdmin = new User
+                    {
+                        Username = "demo_admin",
+                        Email = "admin@demo.com",
+                        PasswordHash = passwordHasher.Hash("Password123!"),
+                        Role = UserRole.Admin
+                    };
+
+                    var demoBuyer2 = new User
+                    {
+                        Username = "demo_buyer2",
+                        Email = "buyer2@demo.com",
+                        PasswordHash = passwordHasher.Hash("Password123!"),
+                        Role = UserRole.Buyer
+                    };
+
                     context.Users.Add(demoSeller);
                     context.Users.Add(demoBuyer);
+                    context.Users.Add(demoAdmin);
+                    context.Users.Add(demoBuyer2);
                     await context.SaveChangesAsync();
 
                     seller = demoSeller;
                     buyer = demoBuyer;
+                    buyer2 = demoBuyer2;
                 }
                 else
                 {
                     seller = await context.Users.FirstOrDefaultAsync(u => u.Email == "seller@demo.com");
                     buyer = await context.Users.FirstOrDefaultAsync(u => u.Email == "buyer@demo.com");
+                    buyer2 = await context.Users.FirstOrDefaultAsync(u => u.Email == "buyer2@demo.com");
                 }
 
-                // Seed Auctions (18 comprehensive demo auctions across all categories)
-                if (!await context.Auctions.AnyAsync() && seller != null && buyer != null)
+                if (!await context.Auctions.AnyAsync() && seller != null && buyer != null && buyer2 != null)
                 {
                     var electronics = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Electronics");
                     var art = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Art");
@@ -79,16 +94,8 @@ namespace OnlineAuctionSystem.Persistence.Seed
 
                     if (electronics != null && art != null && collectibles != null && fashion != null && homeGarden != null && sports != null)
                     {
-                        // NOTE: ImageUrl is intentionally left null for every seeded auction.
-                        // The frontend's imageFallback.ts already picks the correct local
-                        // product/category photo based on the auction's Title/CategoryName —
-                        // hardcoding URLs here (especially old loremflickr links) previously
-                        // caused exactly the "wrong photo" bugs that took a long time to fix
-                        // on the frontend. Leaving this null on every fresh seed guarantees
-                        // the frontend's own logic is always what decides the image.
                         var auctions = new List<Auction>
                     {
-                        // ELECTRONICS (4 items)
                         new Auction
                         {
                             Title = "Sony A7III Mirrorless Camera",
@@ -134,8 +141,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
                             CategoryId = electronics.Id,
                             WinnerId = null
                         },
-
-                        // COLLECTIBLES (4 items)
                         new Auction
                         {
                             Title = "Rolex Submariner Vintage (1970s)",
@@ -181,8 +186,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
                             SellerId = seller.Id,
                             CategoryId = collectibles.Id
                         },
-
-                        // ART (3 items)
                         new Auction
                         {
                             Title = "Abstract Oil Painting 24x36 inches",
@@ -216,8 +219,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
                             SellerId = seller.Id,
                             CategoryId = art.Id
                         },
-
-                        // FASHION (3 items)
                         new Auction
                         {
                             Title = "Hermès Silk Scarf - Vintage Collection",
@@ -251,8 +252,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
                             SellerId = seller.Id,
                             CategoryId = fashion.Id
                         },
-
-                        // HOME & GARDEN (2 items)
                         new Auction
                         {
                             Title = "Antique Wooden Desk - Victorian Era",
@@ -275,8 +274,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
                             SellerId = seller.Id,
                             CategoryId = homeGarden.Id
                         },
-
-                        // SPORTS (2 items)
                         new Auction
                         {
                             Title = "Vintage Baseball Glove - Rawlings Professional",
@@ -304,14 +301,13 @@ namespace OnlineAuctionSystem.Persistence.Seed
                         context.Auctions.AddRange(auctions);
                         await context.SaveChangesAsync();
 
-                        // Add some bids to closed auctions for demonstration
                         var closedRetroConsole = await context.Auctions
                             .FirstOrDefaultAsync(a => a.Title == "Retro Nintendo Entertainment System (NES) Console");
                         if (closedRetroConsole != null)
                         {
                             context.Bids.AddRange(
                                 new Bid { Amount = 260m, AuctionId = closedRetroConsole.Id, BidderId = buyer.Id },
-                                new Bid { Amount = 280m, AuctionId = closedRetroConsole.Id, BidderId = seller.Id },
+                                new Bid { Amount = 280m, AuctionId = closedRetroConsole.Id, BidderId = buyer2.Id },
                                 new Bid { Amount = 300m, AuctionId = closedRetroConsole.Id, BidderId = buyer.Id }
                             );
                         }
@@ -322,9 +318,9 @@ namespace OnlineAuctionSystem.Persistence.Seed
                         {
                             context.Bids.AddRange(
                                 new Bid { Amount = 3600m, AuctionId = closedOmega.Id, BidderId = buyer.Id },
-                                new Bid { Amount = 3700m, AuctionId = closedOmega.Id, BidderId = seller.Id },
+                                new Bid { Amount = 3700m, AuctionId = closedOmega.Id, BidderId = buyer2.Id },
                                 new Bid { Amount = 3800m, AuctionId = closedOmega.Id, BidderId = buyer.Id },
-                                new Bid { Amount = 3900m, AuctionId = closedOmega.Id, BidderId = seller.Id }
+                                new Bid { Amount = 3900m, AuctionId = closedOmega.Id, BidderId = buyer2.Id }
                             );
                         }
 
@@ -339,12 +335,6 @@ namespace OnlineAuctionSystem.Persistence.Seed
             }
             catch (InvalidCastException ex)
             {
-                // NEVER call EnsureDeletedAsync() here. A schema/type mismatch during
-                // seeding is a bug to fix (usually a stale migration or a manually
-                // edited DB), not a reason to silently wipe every user's data —
-                // that would destroy real production data on any transient cast
-                // error. Log it loudly and let the exception propagate so startup
-                // fails visibly instead of the app "recovering" by deleting the DB.
                 logger.LogError(ex,
                     "Database seeding failed due to a type mismatch. This usually means the schema is out of sync " +
                     "with a pending migration. Run 'dotnet ef database update' and investigate — the database was " +

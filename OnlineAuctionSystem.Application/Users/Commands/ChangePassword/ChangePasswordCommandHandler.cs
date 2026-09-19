@@ -29,6 +29,14 @@ namespace OnlineAuctionSystem.Application.Users.Commands.ChangePassword
                 throw new ForbiddenException("Current password is incorrect.");
 
             user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+
+            // If the account was ever compromised, an attacker's stolen
+            // refresh token would otherwise keep working for up to 7 more
+            // days even after the real owner changes their password.
+            // Clearing it here forces every other session to re-authenticate.
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

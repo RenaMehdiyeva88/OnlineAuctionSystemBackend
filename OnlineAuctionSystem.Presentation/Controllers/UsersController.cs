@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 using OnlineAuctionSystem.Application.Users.Queries.GetUserProfile;
+using OnlineAuctionSystem.Application.Users.Queries.GetPublicUserProfile;
 using OnlineAuctionSystem.Application.Users.Commands.UpdateProfile;
 using OnlineAuctionSystem.Application.Users.Commands.ChangePassword;
 using OnlineAuctionSystem.Contracts.Users;
@@ -22,8 +23,6 @@ namespace OnlineAuctionSystem.Presentation.Controllers
             _mediator = mediator;
         }
 
-        // Must be registered before {id:guid}, or ASP.NET Core tries (and
-        // fails) to parse "me" as a Guid.
         [HttpGet("me")]
         public async Task<ActionResult<UserDto>> GetMe(CancellationToken cancellationToken)
         {
@@ -46,9 +45,9 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<UserDto>> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<ActionResult<PublicUserDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetUserProfileQuery(id), cancellationToken);
+            var result = await _mediator.Send(new GetPublicUserProfileQuery(id), cancellationToken);
             return Ok(result);
         }
     }

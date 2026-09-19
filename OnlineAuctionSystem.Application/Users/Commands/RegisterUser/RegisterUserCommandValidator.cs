@@ -11,7 +11,8 @@ namespace OnlineAuctionSystem.Application.Users.Commands.RegisterUser
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
             RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
             RuleFor(x => x.Role)
-                .Must(r => Enum.TryParse<UserRole>(r, true, out _))
+                .Must(r => r.Equals(nameof(UserRole.Buyer), StringComparison.OrdinalIgnoreCase) ||
+                           r.Equals(nameof(UserRole.Seller), StringComparison.OrdinalIgnoreCase))
                 .WithMessage("Role must be either 'Buyer' or 'Seller'.");
         }
     }

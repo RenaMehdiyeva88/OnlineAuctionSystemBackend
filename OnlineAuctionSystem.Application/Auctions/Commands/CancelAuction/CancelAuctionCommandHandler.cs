@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.EntityFrameworkCore;
 using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Domain.Entities;
@@ -29,17 +30,24 @@ namespace OnlineAuctionSystem.Application.Auctions.Commands.CancelAuction
                 throw new ForbiddenException("You can only cancel your own auctions.");
 
             if (auction.Status != AuctionStatus.Active)
-                return Unit.Value; // already closed/cancelled — nothing to do
+                return Unit.Value;
 
             var existingBid = await _bidRepository.GetHighestBidAsync(auction.Id, cancellationToken);
             if (existingBid is not null)
                 throw new ForbiddenException("An auction that already has bids cannot be cancelled.");
 
-            // AuctionStatus.Cancelled already existed on the enum but nothing
-            // in the codebase ever set it — this is the only place that does.
             auction.Status = AuctionStatus.Cancelled;
             _auctionRepository.Update(auction);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new ConflictException(
+                    "This auction was just modified elsewhere. Please refresh and try again.");
+            }
 
             return Unit.Value;
         }

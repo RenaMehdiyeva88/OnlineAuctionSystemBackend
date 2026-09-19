@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Domain.Entities;
 using OnlineAuctionSystem.Persistence.Context;
@@ -17,6 +18,8 @@ namespace OnlineAuctionSystem.Persistence.Repositories
         public async Task<(List<Notification> Items, int TotalCount)> GetByUserIdAsync(
             Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
         {
+            (pageNumber, pageSize) = PaginationGuard.Clamp(pageNumber, pageSize);
+
             var query = _context.Notifications
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedAt);
