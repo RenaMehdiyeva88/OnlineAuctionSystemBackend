@@ -25,9 +25,9 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         // F3/F5 — paginated outbid and auction-won/closed notifications for the current user.
         [HttpGet]
         public async Task<ActionResult<PagedResult<NotificationDto>>> GetMyNotifications(
-            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+           [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(new GetNotificationsQuery(CurrentUserId, pageNumber, pageSize), cancellationToken);
+            var result = await _mediator.Send(new GetNotificationsQuery(CurrentUserId, page, pageSize), cancellationToken);
             return Ok(result);
         }
 

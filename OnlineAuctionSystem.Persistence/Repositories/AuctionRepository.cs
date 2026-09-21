@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OnlineAuctionSystem.Application.Common;
+using OnlineAuctionSystem.Application.Common.Interfaces;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
 using OnlineAuctionSystem.Domain.Entities;
 using OnlineAuctionSystem.Domain.Enums;
@@ -10,10 +11,12 @@ namespace OnlineAuctionSystem.Persistence.Repositories
     public class AuctionRepository : IAuctionRepository
     {
         private readonly AuctionDbContext _context;
+        private readonly IDateTime _dateTime;
 
-        public AuctionRepository(AuctionDbContext context)
+        public AuctionRepository(AuctionDbContext context, IDateTime dateTime)
         {
             _context = context;
+            _dateTime = dateTime;
         }
 
         public async Task<Auction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
@@ -39,7 +42,7 @@ namespace OnlineAuctionSystem.Persistence.Repositories
                 .Include(a => a.Seller)
                 .Include(a => a.Category)
                 .Include(a => a.Bids)
-                .Where(a => a.Status == AuctionStatus.Active && a.EndTime > DateTime.UtcNow)
+                .Where(a => a.Status == AuctionStatus.Active && a.EndTime > _dateTime.UtcNow)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -107,7 +110,7 @@ namespace OnlineAuctionSystem.Persistence.Repositories
         public async Task<List<Auction>> GetExpiredActiveAuctionsAsync(CancellationToken cancellationToken = default) =>
             await _context.Auctions
                 .Include(a => a.Bids)
-                .Where(a => a.Status == AuctionStatus.Active && a.EndTime <= DateTime.UtcNow)
+                .Where(a => a.Status == AuctionStatus.Active && a.EndTime <= _dateTime.UtcNow)
                 .ToListAsync(cancellationToken);
 
         public async Task AddAsync(Auction auction, CancellationToken cancellationToken = default) =>

@@ -39,9 +39,9 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         [HttpGet("auctions/{auctionId:guid}/bids")]
         [AllowAnonymous]
         public async Task<ActionResult<PagedResult<BidDto>>> GetHistory(
-            Guid auctionId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+           Guid auctionId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(new GetBidHistoryQuery(auctionId, pageNumber, pageSize), cancellationToken);
+            var result = await _mediator.Send(new GetBidHistoryQuery(auctionId, page, pageSize), cancellationToken);
             return Ok(result);
         }
 

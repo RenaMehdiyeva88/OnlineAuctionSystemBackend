@@ -3,7 +3,6 @@ using OnlineAuctionSystem.Application.Common.Interfaces.Services;
 namespace OnlineAuctionSystem.Infrastructure.Identity
 {
     // Requires NuGet package: BCrypt.Net-Next
-    // Requires NuGet package: BCrypt.Net-Next
     public class PasswordHasher : IPasswordHasher
     {
         public string Hash(string password)

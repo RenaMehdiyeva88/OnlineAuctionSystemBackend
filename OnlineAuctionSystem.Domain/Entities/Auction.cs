@@ -31,6 +31,7 @@ namespace OnlineAuctionSystem.Domain.Entities
 
         public decimal CurrentHighestBid => Bids.Count > 0 ? Bids.Max(b => b.Amount) : StartingPrice;
 
+        [Obsolete("Use IDateTime.UtcNow directly in handlers/repositories instead — this reads the real system clock and breaks testability.")]
         public bool IsExpired => DateTime.UtcNow >= EndTime;
 
         // Optimistic concurrency token: prevents two simultaneous bids from

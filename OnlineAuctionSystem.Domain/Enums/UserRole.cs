@@ -1,9 +1,6 @@
-﻿namespace OnlineAuctionSystem.Domain.Enums
+﻿public enum UserRole
 {
-    public enum UserRole
-    {
-        Buyer = 1,
-        Seller = 2,
-        Admin = 3
-    }
+    Buyer = 0,
+    Seller = 1,
+    Admin = 2
 }

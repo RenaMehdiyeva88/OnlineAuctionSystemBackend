@@ -1,4 +1,5 @@
 using MediatR;
+using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
@@ -15,9 +16,6 @@ namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
         private readonly ITokenService _tokenService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDateTime _dateTime;
-
-        // Refresh tokens are kept alive for 7 days by default.
-        private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(7);
 
         public LoginUserCommandHandler(
             IUserRepository userRepository,
@@ -46,7 +44,7 @@ namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
 
             // NOTE: requires User.RefreshToken / User.RefreshTokenExpiryTime on the Domain entity.
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = _dateTime.UtcNow.Add(RefreshTokenLifetime);
+            user.RefreshTokenExpiryTime = _dateTime.UtcNow.Add(AuthConstants.RefreshTokenLifetime);
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

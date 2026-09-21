@@ -1,4 +1,5 @@
 using MediatR;
+using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Exceptions;
 using OnlineAuctionSystem.Application.Common.Interfaces;
 using OnlineAuctionSystem.Application.Common.Interfaces.Persistence;
@@ -37,7 +38,7 @@ namespace OnlineAuctionSystem.Application.Users.Commands.RefreshToken
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
             user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = _dateTime.UtcNow.AddDays(7);
+            user.RefreshTokenExpiryTime = _dateTime.UtcNow.Add(AuthConstants.RefreshTokenLifetime);
             _userRepository.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
