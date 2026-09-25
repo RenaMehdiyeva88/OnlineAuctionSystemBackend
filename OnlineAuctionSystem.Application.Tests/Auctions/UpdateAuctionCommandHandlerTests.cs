@@ -2,20 +2,19 @@
 using OnlineAuctionSystem.Application.Common;
 using OnlineAuctionSystem.Application.Common.Interfaces;
 
-namespace OnlineAuctionSystem.Application.Auctions.Commands.CreateAuction
+namespace OnlineAuctionSystem.Application.Auctions.Commands.UpdateAuction
 {
-    public class CreateAuctionCommandValidator : AbstractValidator<CreateAuctionCommand>
+    public class UpdateAuctionCommandValidator : AbstractValidator<UpdateAuctionCommand>
     {
-        public CreateAuctionCommandValidator(IDateTime dateTime)
+        public UpdateAuctionCommandValidator(IDateTime dateTime)
         {
-            RuleFor(x => x.Title).NotEmpty().MaximumLength(150).MustNotContainHtml(); // must match AuctionConfiguration.cs HasMaxLength(150)
+            RuleFor(x => x.Title).NotEmpty().MaximumLength(150).MustNotContainHtml();
             RuleFor(x => x.Description).NotEmpty().MaximumLength(4000).MustNotContainHtml();
             RuleFor(x => x.StartingPrice).GreaterThan(0);
             RuleFor(x => x.MinimumIncrement).GreaterThan(0);
             RuleFor(x => x.EndTime).GreaterThan(dateTime.UtcNow)
                 .WithMessage("End time must be in the future.");
             RuleFor(x => x.CategoryId).NotEmpty();
-            RuleFor(x => x.SellerId).NotEmpty();
         }
     }
 }
