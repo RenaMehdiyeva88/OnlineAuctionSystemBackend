@@ -2,5 +2,7 @@
 
 namespace OnlineAuctionSystem.Application.Users.Commands.ChangePassword
 {
-    public record ChangePasswordCommand(Guid UserId, string CurrentPassword, string NewPassword) : IRequest<Unit>;
+    public sealed record ChangePasswordCommand(
+        string CurrentPassword,
+        string NewPassword) : IRequest;
 }

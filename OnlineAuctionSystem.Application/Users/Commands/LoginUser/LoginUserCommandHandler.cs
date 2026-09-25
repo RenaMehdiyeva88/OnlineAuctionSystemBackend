@@ -31,12 +31,14 @@ namespace OnlineAuctionSystem.Application.Users.Commands.LoginUser
             _dateTime = dateTime;
         }
 
+        public IPasswordHasher PasswordHasher => _passwordHasher;
+
         public async Task<AuthResponse> Handle(LoginUserCommand request, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken)
                 ?? throw new UnauthorizedException("Invalid email or password.");
 
-            if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
+            if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
                 throw new UnauthorizedException("Invalid email or password.");
 
             var accessToken = _tokenService.GenerateAccessToken(user);

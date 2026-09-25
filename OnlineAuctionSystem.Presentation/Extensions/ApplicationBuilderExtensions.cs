@@ -15,20 +15,36 @@ namespace OnlineAuctionSystem.Presentation.Extensions
                 // Redirect root URL to Swagger
                 app.MapGet("/", context =>
                 {
-                    context.Response.Redirect("/swagger/index.html", permanent: false);
+                    context.Response.Redirect(
+                        "/swagger/index.html",
+                        permanent: false);
+
                     return Task.CompletedTask;
                 });
             }
 
+            // Global exception handling
             app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+            // HTTPS
             app.UseHttpsRedirection();
-            // Serves wwwroot/uploads/* as /uploads/* — required for uploaded
-            // auction photos (LocalFileStorageService) to be viewable at all.
+
+            // Static files: /wwwroot/uploads/*
             app.UseStaticFiles();
+
+            // CORS
             app.UseCors("Default");
+
+            // Authentication MUST come before Authorization
             app.UseAuthentication();
+
+            // Authorization
             app.UseAuthorization();
+
+            // API controllers
             app.MapControllers();
+
+            // SignalR
             app.MapHub<NotificationHub>("/hubs/notifications");
 
             return app;

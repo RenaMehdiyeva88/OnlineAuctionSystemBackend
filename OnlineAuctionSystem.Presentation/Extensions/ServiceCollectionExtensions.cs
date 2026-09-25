@@ -6,91 +6,236 @@ using OnlineAuctionSystem.Application.Common.Behaviours;
 using OnlineAuctionSystem.Infrastructure.DependencyInjection;
 using OnlineAuctionSystem.Persistence.DependencyInjection;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 namespace OnlineAuctionSystem.Presentation.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        // Application: MediatR handlers, AutoMapper, FluentValidation, pipeline behaviours (F1–F8 use cases).
-        public static IServiceCollection AddApplicationLayer(this IServiceCollection services)
-        {
-            var applicationAssembly = Assembly.Load("OnlineAuctionSystem.Application");
+        // ============================================================
+        // APPLICATION
+        // ============================================================
 
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(applicationAssembly));
+        public static IServiceCollection AddApplicationLayer(
+            this IServiceCollection services)
+        {
+            var applicationAssembly =
+                Assembly.Load("OnlineAuctionSystem.Application");
+
+            services.AddMediatR(cfg =>
+                cfg.RegisterServicesFromAssembly(applicationAssembly));
+
             services.AddAutoMapper(applicationAssembly);
+
             services.AddValidatorsFromAssembly(applicationAssembly);
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+
+            services.AddTransient(
+                typeof(IPipelineBehavior<,>),
+                typeof(ValidationBehaviour<,>));
 
             return services;
         }
 
-        // Persistence + Infrastructure: DbContext/repositories, JWT/hashing/SignalR/background jobs.
-        public static IServiceCollection AddPersistenceAndInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        // ============================================================
+        // PERSISTENCE + INFRASTRUCTURE
+        // ============================================================
+
+        public static IServiceCollection AddPersistenceAndInfrastructure(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
             services.AddPersistence(configuration);
+
             services.AddInfrastructure(configuration);
 
             return services;
         }
 
-        // F1 — JWT bearer auth; also lets SignalR read the token from the query string
-        // since browsers can't set an Authorization header on WebSocket connections.
-        public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+        // ============================================================
+        // JWT AUTHENTICATION
+        // ============================================================
+
+        public static IServiceCollection AddJwtAuthentication(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
-            var jwtKey = configuration["Jwt:Key"]!;
+            var jwtKey = configuration["Jwt:Key"];
 
-            services.AddAuthentication(options =>
+            if (string.IsNullOrWhiteSpace(jwtKey))
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
+                throw new InvalidOperationException(
+                    "Jwt:Key is missing from configuration.");
+            }
+
+            var jwtIssuer = configuration["Jwt:Issuer"];
+
+            if (string.IsNullOrWhiteSpace(jwtIssuer))
             {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                    ValidateIssuer = true,
-                    ValidIssuer = configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = configuration["Jwt:Audience"],
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
+                throw new InvalidOperationException(
+                    "Jwt:Issuer is missing from configuration.");
+            }
 
-                options.Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = context =>
-                    {
-                        var accessToken = context.Request.Query["access_token"];
-                        var path = context.HttpContext.Request.Path;
+            var jwtAudience = configuration["Jwt:Audience"];
 
-                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            if (string.IsNullOrWhiteSpace(jwtAudience))
+            {
+                throw new InvalidOperationException(
+                    "Jwt:Audience is missing from configuration.");
+            }
+
+            services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme =
+                        JwtBearerDefaults.AuthenticationScheme;
+
+                    options.DefaultChallengeScheme =
+                        JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = false;
+
+                    options.SaveToken = true;
+
+                    options.TokenValidationParameters =
+                        new TokenValidationParameters
                         {
-                            context.Token = accessToken;
+                            // ------------------------------------------------
+                            // Signature
+                            // ------------------------------------------------
+                            ValidateIssuerSigningKey = true,
+
+                            IssuerSigningKey =
+                                new SymmetricSecurityKey(
+                                    Encoding.UTF8.GetBytes(jwtKey)),
+
+                            // ------------------------------------------------
+                            // Issuer
+                            // ------------------------------------------------
+                            ValidateIssuer = true,
+
+                            ValidIssuer = jwtIssuer,
+
+                            // ------------------------------------------------
+                            // Audience
+                            // ------------------------------------------------
+                            ValidateAudience = true,
+
+                            ValidAudience = jwtAudience,
+
+                            // ------------------------------------------------
+                            // Lifetime
+                            // ------------------------------------------------
+                            ValidateLifetime = true,
+
+                            ClockSkew = TimeSpan.Zero,
+
+                            // ------------------------------------------------
+                            // IMPORTANT:
+                            // ASP.NET Core will use this claim
+                            // for [Authorize(Roles = "Seller")]
+                            // ------------------------------------------------
+                            RoleClaimType = ClaimTypes.Role,
+
+                            // User name claim
+                            NameClaimType = ClaimTypes.NameIdentifier
+                        };
+
+                    // --------------------------------------------------------
+                    // SignalR JWT support
+                    // Browser WebSocket connections cannot always send
+                    // Authorization header, so we allow access_token
+                    // in the query string for /hubs/*
+                    // --------------------------------------------------------
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken =
+                                context.Request.Query["access_token"];
+
+                            var path =
+                                context.HttpContext.Request.Path;
+
+                            if (!string.IsNullOrEmpty(accessToken) &&
+                                path.StartsWithSegments("/hubs"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return Task.CompletedTask;
+                        },
+
+                        // ----------------------------------------------------
+                        // Useful for debugging authentication problems
+                        // ----------------------------------------------------
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine(
+                                $"JWT Authentication failed: " +
+                                $"{context.Exception.Message}");
+
+                            return Task.CompletedTask;
+                        },
+
+                        OnTokenValidated = context =>
+                        {
+                            Console.WriteLine(
+                                "JWT token successfully validated.");
+
+                            var user = context.Principal;
+
+                            if (user != null)
+                            {
+                                Console.WriteLine(
+                                    $"User: {user.Identity?.Name}");
+
+                                Console.WriteLine(
+                                    $"Roles: {string.Join(
+                                        ", ",
+                                        user.Claims
+                                            .Where(c =>
+                                                c.Type == ClaimTypes.Role)
+                                            .Select(c => c.Value))}");
+                            }
+
+                            return Task.CompletedTask;
                         }
+                    };
+                });
 
-                        return Task.CompletedTask;
-                    }
-                };
-            });
-
+            // Authorization
             services.AddAuthorization();
 
             return services;
         }
 
-        public static IServiceCollection AddCorsPolicy(this IServiceCollection services, IConfiguration configuration)
+        // ============================================================
+        // CORS
+        // ============================================================
+
+        public static IServiceCollection AddCorsPolicy(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
             services.AddCors(options =>
             {
                 options.AddPolicy("Default", policy =>
                 {
-                    policy.WithOrigins(configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
+                    var allowedOrigins =
+                        configuration
+                            .GetSection("Cors:AllowedOrigins")
+                            .Get<string[]>();
+
+                    policy
+                        .WithOrigins(
+                            allowedOrigins ??
+                            Array.Empty<string>())
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials(); // required for SignalR
+                        .AllowCredentials();
                 });
             });
 

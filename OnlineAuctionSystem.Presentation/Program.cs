@@ -1,4 +1,6 @@
+using OnlineAuctionSystem.Application.Common.Interfaces;
 using OnlineAuctionSystem.Application.Common.Interfaces.Services;
+using OnlineAuctionSystem.Infrastructure.Services;
 using OnlineAuctionSystem.Persistence.Context;
 using OnlineAuctionSystem.Persistence.Seed;
 using OnlineAuctionSystem.Presentation.Extensions;
@@ -12,6 +14,9 @@ builder.Services.AddApplicationLayer();
 builder.Services.AddPersistenceAndInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddCorsPolicy(builder.Configuration);
+
+// --- Missing service that ForgotPasswordCommandHandler needs ---
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddControllers(options =>
 {

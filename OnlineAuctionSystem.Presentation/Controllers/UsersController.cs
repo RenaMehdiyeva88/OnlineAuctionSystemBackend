@@ -40,7 +40,7 @@ namespace OnlineAuctionSystem.Presentation.Controllers
         [HttpPut("me/password")]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken cancellationToken)
         {
-            await _mediator.Send(new ChangePasswordCommand(CurrentUserId, request.CurrentPassword, request.NewPassword), cancellationToken);
+            await _mediator.Send(new ChangePasswordCommand(request.CurrentPassword, request.NewPassword), cancellationToken);
             return NoContent();
         }
 

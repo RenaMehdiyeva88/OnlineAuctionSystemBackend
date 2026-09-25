@@ -1,16 +1,19 @@
 ﻿using FluentValidation;
-using OnlineAuctionSystem.Application.Users.Commands.ChangePassword;
+using OnlineAuctionSystem.Application.Users.Commands.ResetPassword;
 
 namespace OnlineAuctionSystem.Application.Users.Validators
 {
-    public sealed class ChangePasswordCommandValidator
-        : AbstractValidator<ChangePasswordCommand>
+    public sealed class ResetPasswordCommandValidator
+        : AbstractValidator<ResetPasswordCommand>
     {
-        public ChangePasswordCommandValidator()
+        public ResetPasswordCommandValidator()
         {
-            RuleFor(x => x.CurrentPassword)
+            RuleFor(x => x.Email)
                 .NotEmpty()
-                .WithMessage("Current password is required.");
+                .EmailAddress();
+
+            RuleFor(x => x.Token)
+                .NotEmpty();
 
             RuleFor(x => x.NewPassword)
                 .NotEmpty()
